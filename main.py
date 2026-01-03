@@ -4,7 +4,7 @@ import pandas as pd
 
 # 1. Configuração da Página do App
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰")
-st.title("💰 Sistema Rockefeller: Gestão de Capital")
+st.title("💰 IA Rockefeller")
 
 # 2. Menu Lateral (Sidebar)
 st.sidebar.header("Configurações")
@@ -35,3 +35,4 @@ if st.button("Calcular Melhor Alocação"):
     st.success(f"Com R$ {capital}, a IA sugere comprar {cotas} cotas de MXRF11.")
 
     st.info(f"Renda Mensal Estimada: R$ {cotas * 0.10:.2f}")
+
