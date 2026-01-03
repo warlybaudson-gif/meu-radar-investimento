@@ -2,37 +2,40 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 
-# 1. Configuração da Página do App
+# 1. Configuração da Página (Suas linhas 6 e 7)
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰")
 st.title("💰 IA Rockefeller")
 
-# 2. Menu Lateral (Sidebar)
+# 2. Menu Lateral
 st.sidebar.header("Configurações")
 capital = st.sidebar.number_input("Seu Capital Disponível (R$)", value=100.0)
-alerta_perda = st.sidebar.slider("Alerta de Risco (%)", 1, 20, 5)
 
-# 3. O Radar (Lógica que você já testou)
-st.subheader("🛰️ Radar de Oportunidades")
+# 3. Lógica do Radar
 radar = ["VALE3.SA", "PETR4.SA", "MXRF11.SA"]
 dados_radar = []
 
 for ativo in radar:
-    preco = yf.Ticker(ativo).history(period="1d")['Close'].iloc[-1]
-    # Lógica de decisão simplificada para o App
-    status = "BARATO" if preco < (preco * 1.01) else "CARO" # Exemplo dinâmico
+    ticker = yf.Ticker(ativo)
+    # Preço atual
+    preco = ticker.history(period="1d")['Close'].iloc[-1]
+    # Média dos últimos 30 dias para o cálculo de "BARATO"
+    media_30 = ticker.history(period="30d")['Close'].mean()
+    
+    status = "BARATO" if preco < media_30 else "CARO"
     dados_radar.append({"Ativo": ativo, "Preço": f"R$ {preco:.2f}", "Status": status})
 
+st.subheader("🛰️ Radar de Oportunidades")
 st.table(pd.DataFrame(dados_radar))
 
-# 4. Calculadora Inteligente
-st.subheader("💸 Plano de Compra Sugerido")
+# --- NOVIDADE: GRÁFICO DE TENDÊNCIA ---
+st.subheader("📈 Análise de Tendência (30 dias)")
+escolha = st.selectbox("Selecione o ativo para analisar:", radar)
+dados_grafico = yf.Ticker(escolha).history(period="30d")['Close']
+st.line_chart(dados_grafico)
+# ---------------------------------------
+
+# 4. Plano de Compra
 if st.button("Calcular Melhor Alocação"):
-    # Aqui entra o seu código de cálculo de cotas
-    preco_fii = 9.50 # Baseado no seu último print
-    cotas = int(capital // preco_fii)
-    investido = cotas * preco_fii
-    
-    st.success(f"Com R$ {capital}, a IA sugere comprar {cotas} cotas de MXRF11.")
-
-    st.info(f"Renda Mensal Estimada: R$ {cotas * 0.10:.2f}")
-
+    p_mxrf = yf.Ticker("MXRF11.SA").history(period="1d")['Close'].iloc[-1]
+    cotas = int(capital // p_mxrf)
+    st.success(f"Com R$ {capital:.2f}, você pode comprar {cotas} cotas de MXRF11.")
