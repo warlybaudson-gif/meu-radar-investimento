@@ -33,4 +33,5 @@ if st.button("Calcular Melhor Alocação"):
     investido = cotas * preco_fii
     
     st.success(f"Com R$ {capital}, a IA sugere comprar {cotas} cotas de MXRF11.")
+
     st.info(f"Renda Mensal Estimada: R$ {cotas * 0.10:.2f}")
