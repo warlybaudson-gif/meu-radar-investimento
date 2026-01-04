@@ -5,32 +5,36 @@ import pandas as pd
 # 1. Configurações de Identidade
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
-# 2. Harmonização Total Black e Correção de Fontes
+# 2. Harmonização Total Black e Correção de Contrastes
 st.markdown("""
     <style>
+    /* Fundo Principal */
     .stApp { background-color: #000000; color: #ffffff; }
     
-    /* Labels em Branco Vivo */
-    label { color: #ffffff !important; font-weight: bold !important; font-size: 14px !important; }
+    /* CORREÇÃO: Fundo da caixa 'Sua Ordem' (Expander) para Preto */
+    .streamlit-expanderHeader { background-color: #000000 !important; border-bottom: 1px solid #333 !important; }
+    .streamlit-expanderContent { background-color: #000000 !important; border: 1px solid #333 !important; }
     
-    /* Tabela Responsiva sem quebra de texto */
-    table { width: 100% !important; font-size: 13px !important; }
-    th, td { 
-        white-space: nowrap !important; 
-        padding: 10px !important;
-        text-align: left !important;
-    }
-    .stTable { overflow-x: auto !important; display: block !important; }
+    /* CORREÇÃO: Deixar os números do Resultado bem claros e visíveis */
+    div[data-testid="stMetricValue"] { color: #ffffff !important; font-size: 28px !important; font-weight: bold !important; }
+    div[data-testid="stMetricLabel"] { color: #aaaaaa !important; }
 
+    /* Labels dos campos de entrada em Branco */
+    label { color: #ffffff !important; font-weight: bold !important; }
+    
+    /* Tabela Responsiva e Dark */
+    table { width: 100% !important; font-size: 13px !important; }
+    th, td { white-space: nowrap !important; padding: 10px !important; text-align: left !important; }
+    .stTable { overflow-x: auto !important; display: block !important; }
     thead tr th { background-color: #1a1a1a !important; color: #58a6ff !important; }
     tbody td { background-color: #000000 !important; color: #ffffff !important; }
     
-    /* Estilo das Métricas */
+    /* Estilo dos blocos de métricas */
     div[data-testid="stMetric"] { 
         background-color: #111111; 
         border: 1px solid #333333; 
-        padding: 10px; 
-        border-radius: 8px; 
+        padding: 15px; 
+        border-radius: 10px; 
     }
     </style>
     """, unsafe_allow_html=True)
@@ -66,19 +70,15 @@ for t in tickers:
 df = pd.DataFrame(dados_finais)
 st.table(df)
 
-# 5. Gestor de Patrimônio (XP) com Chave Seletora de Ordem
+# 5. Gestor de Patrimônio (XP) Corrigido
 st.markdown("---")
 col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("🧮 Gestor XP")
+    # A caixa abaixo agora terá o fundo totalmente preto
     with st.expander("Sua Ordem", expanded=True):
-        # NOVA CHAVE SELETORA: Simula as opções do App da XP
-        tipo_ordem = st.selectbox(
-            "Tipo de Ordem:",
-            ("A Mercado", "Limitada", "Stop Loss", "Stop Móvel")
-        )
-        
+        tipo_ordem = st.selectbox("Tipo de Ordem:", ("A Mercado", "Limitada", "Stop Loss", "Stop Móvel"))
         valor_xp = st.number_input("Valor enviado para a XP (R$):", value=50.0)
         pago_xp = st.number_input("Preço pago por cota (R$):", value=31.0)
         
@@ -91,7 +91,8 @@ with col1:
 
 with col2:
     st.subheader("📊 Resultado")
-    st.write(f"Ordem Selecionada: **{tipo_ordem}**") # Mostra a escolha do usuário
+    st.write(f"Ordem Selecionada: **{tipo_ordem}**")
+    # Os valores abaixo agora estarão em branco brilhante e fáceis de ler
     st.metric("Cotas Adquiridas", f"{cotas} un")
     st.metric("Patrimônio Total", f"R$ {patrimonio:.2f}", f"R$ {resultado:.2f}")
 
