@@ -25,12 +25,7 @@ st.markdown("""
 
 st.title("💰 IA Rockefeller")
 
-# 3. Painel Lateral
-st.sidebar.markdown("### ⚙️ Configurações")
-capital_base = st.sidebar.number_input("Capital total (R$)", value=1000.0)
-
-# 4. Tabela de Radar
-st.subheader("🛰️ Radar de Ativos")
+# 3. Processamento de Dados do Radar (Criado antes para poder exportar)
 tickers = ["PETR4.SA", "VALE3.SA", "MXRF11.SA", "BTC-USD"]
 dados_finais = []
 
@@ -49,10 +44,29 @@ for t in tickers:
             "Status": status, "Ação": acao, "Div. 12m": f"R$ {divs:.2f}"
         })
 
-df = pd.DataFrame(dados_finais)
-st.table(df)
+df_radar = pd.DataFrame(dados_finais)
 
-# 5. Gestor de Patrimônio (XP) - AGORA COM TROCO EM CONTA
+# 4. Painel Lateral com Botão de Exportação CSV
+st.sidebar.markdown("### ⚙️ Painel de Controle")
+capital_base = st.sidebar.number_input("Capital total (R$)", value=1000.0)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📂 Exportar Dados")
+# Função para converter o DataFrame em CSV
+csv = df_radar.to_csv(index=False).encode('utf-8')
+st.sidebar.download_button(
+    label="Baixar Tabela (CSV)",
+    data=csv,
+    file_name='radar_rockefeller.csv',
+    mime='text/csv',
+)
+st.sidebar.info("O arquivo CSV pode ser aberto no Excel, Power BI ou Python.")
+
+# 5. Exibição da Tabela de Radar
+st.subheader("🛰️ Radar de Ativos")
+st.table(df_radar)
+
+# 6. Gestor de Patrimônio (XP)
 st.markdown("---")
 col_calc, col_res = st.columns([1, 1.2])
 
@@ -63,25 +77,21 @@ with col_calc:
         valor_xp = st.number_input("Valor enviado para a XP (R$):", value=50.0)
         pago_xp = st.number_input("Preço pago por cota (R$):", value=31.0)
         
-        # Lógica de cálculo
         cotas = int(valor_xp // pago_xp)
-        troco_xp = valor_xp % pago_xp # O que sobra em dinheiro
+        troco_xp = valor_xp % pago_xp
         
         preco_petr = yf.Ticker("PETR4.SA").history(period="1d")['Close'].iloc[-1]
-        patrimonio_em_acoes = cotas * preco_petr
-        patrimonio_total = patrimonio_em_acoes + troco_xp
+        patrimonio_total = (cotas * preco_petr) + troco_xp
         lucro_abs = patrimonio_total - valor_xp
 
 with col_res:
     st.subheader("📊 Resultado")
-    # Organizando as métricas para incluir o Troco
     m1, m2 = st.columns(2)
     m1.metric("Cotas Compradas", f"{cotas} un")
-    m2.metric("Troco em Conta", f"R$ {troco_xp:.2f}") # Novo campo de Troco
-    
+    m2.metric("Troco em Conta", f"R$ {troco_xp:.2f}")
     st.metric("Patrimônio Total", f"R$ {patrimonio_total:.2f}", f"R$ {lucro_abs:.2f}")
 
-# 6. Gráfico
+# 7. Gráfico
 st.markdown("---")
 st.subheader("📈 Tendência 30d")
 escolha = st.selectbox("Escolha o Ativo:", tickers)
