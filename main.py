@@ -2,70 +2,73 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 
-# 1. Configurações Visuais
-st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="centered")
-st.title("💰 IA Rockefeller: Gestão & Radar")
+# 1. Configurações Visuais Estilo Terminal
+st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
-# 2. Painel de Controle Lateral
-st.sidebar.header("🎚️ Painel de Controle")
-capital = st.sidebar.number_input("Seu Capital Disponível (R$)", min_value=0.0, value=1000.0)
+# Estilização para Fundo Escuro
+st.markdown("""
+    <style>
+    .main { background-color: #1a1a1a; color: #e0e0e0; }
+    .stMetric { background-color: #2d2d2d; padding: 15px; border-radius: 10px; border: 1px solid #444; }
+    </style>
+    """, unsafe_allow_html=True)
 
-# 3. Processamento e Lógica de Alerta
-radar = ["VALE3.SA", "PETR4.SA", "MXRF11.SA", "BTC-USD"]
-dados_final = []
-alertas = []
+st.title("💰 IA Rockefeller: Intelligence & Radar")
+st.markdown("---")
 
-with st.spinner('Sincronizando com o mercado...'):
-    for ativo in radar:
-        ticker = yf.Ticker(ativo)
-        # Pegamos o histórico para preço atual e média
-        hist_30d = ticker.history(period="30d")
-        preco_atual = hist_30d['Close'].iloc[-1]
-        media_30 = hist_30d['Close'].mean()
+# 2. Radar de Mercado em Tempo Real
+col1, col2 = st.columns([1, 1])
+
+with col1:
+    st.subheader("🛰️ Radar de Ativos")
+    tickers = ["PETR4.SA", "VALE3.SA", "MXRF11.SA", "BTC-USD"]
+    dados_mercado = []
+
+    for t in tickers:
+        ativo = yf.Ticker(t)
+        # Busca preço atual
+        info = ativo.history(period="1d")
+        if not info.empty:
+            preco_atual = info['Close'].iloc[-1]
+            
+            # Busca média de 30 dias para o Status
+            hist = ativo.history(period="30d")
+            media = hist['Close'].mean()
+            status = "🔥 BARATO" if preco_atual < media else "💎 FORTE"
+            
+            dados_mercado.append({"Ativo": t, "Preço": f"R$ {preco_atual:.2f}", "Status": status})
+
+    df = pd.DataFrame(dados_mercado)
+    st.table(df)
+
+# 3. Calculadora de Lucro Real (Sua posição na XP)
+with col2:
+    st.subheader("🧮 Gestor de Patrimônio")
+    with st.expander("Configurar Minha Ordem da XP", expanded=True):
+        capital_investido = st.number_input("Quanto enviei para a XP (R$):", value=50.00)
+        preco_pago = st.number_input("Preço que paguei por cota (R$):", value=31.00)
         
-        status_preco = "Barato" if preco_atual < media_30 else "Caro"
-        recomenda = "Comprar" if status_preco == "Barato" else "Vender"
+        # Cálculo de Cotas e Troco
+        quantidade_cotas = int(capital_investido // preco_pago)
+        sobra_caixa = capital_investido % preco_pago
         
-        if recomenda == "Comprar":
-            alertas.append(ativo)
-        
-        moeda = "$" if "USD" in ativo else "R$"
-        divs = ticker.dividends
-        yield_pct = (divs.tail(12).sum() / preco_atual) * 100 if not divs.empty else 0.0
+        # Valor Atual (Baseado na PETR4)
+        preco_agora = yf.Ticker("PETR4.SA").history(period="1d")['Close'].iloc[-1]
+        valor_patrimonio_atual = (quantidade_cotas * preco_agora) + sobra_caixa
+        lucro_prejuizo = valor_patrimonio_atual - capital_investido
 
-        dados_final.append({
-            "Ativo": ativo,
-            "Preço": f"{moeda} {preco_atual:,.2f}",
-            "Status": status_preco,
-            "Ação": recomenda,
-            "DY (12m)": f"{yield_pct:.2f}%"
-        })
+    # Exibição de Resultados
+    c1, c2 = st.columns(2)
+    c1.metric("Cotas Adquiridas", f"{quantidade_cotas} un")
+    
+    cor_lucro = "normal" if lucro_prejuizo >= 0 else "inverse"
+    c2.metric("Resultado Atual", f"R$ {valor_patrimonio_atual:.2f}", f"R$ {lucro_prejuizo:.2f}", delta_color=cor_lucro)
 
-# Criar o DataFrame para exibir e exportar
-df = pd.DataFrame(dados_final)
+# 4. Gráfico de Tendência
+st.markdown("---")
+st.subheader("📈 Análise de Tendência (30 dias)")
+selecionado = st.selectbox("Escolha o ativo para analisar:", tickers)
+grafico_data = yf.Ticker(selecionado).history(period="30d")['Close']
+st.line_chart(grafico_data)
 
-# --- EXIBIÇÃO DE NOTIFICAÇÃO ---
-if alertas:
-    st.error(f"🚨 ALERTA DE OPORTUNIDADE: {', '.join(alertas)} estão em ponto de COMPRA!")
-
-# Exibição da Tabela
-st.table(df)
-
-# --- NOVIDADE: BOTÃO DE EXPORTAR PARA EXCEL (CSV) ---
-csv = df.to_csv(index=False).encode('utf-8')
-st.download_button(
-    label="📥 Baixar dados para Excel",
-    data=csv,
-    file_name='radar_IA_rockefeller.csv',
-    mime='text/csv',
-)
-st.divider()
-
-# 4. Gráfico e Alocação
-st.subheader("📈 Tendência e Planejamento")
-escolha = st.selectbox("Analisar gráfico de:", radar)
-st.line_chart(yf.Ticker(escolha).history(period="30d")['Close'])
-
-if st.button("Calcular Cotas de MXRF11"):
-    p_fii = yf.Ticker("MXRF11.SA").history(period="1d")['Close'].iloc[-1]
-    st.success(f"Com seu capital, você compra {int(capital // p_fii)} cotas de MXRF11.")
+st.sidebar.info("IA Rockefeller atualizada. Monitorando sua ordem de PETR4.")
