@@ -30,11 +30,10 @@ dados_finais = []
 for t in tickers:
     try:
         ativo = yf.Ticker(t)
-        hist_1d = ativo.history(period="1d")
-        if not hist_1d.empty:
-            p_atual = hist_1d['Close'].iloc[-1]
-            h_30d = ativo.history(period="30d")
-            m_30 = h_30d['Close'].mean()
+        hist = ativo.history(period="1d")
+        if not hist.empty:
+            p_atual = hist['Close'].iloc[-1]
+            m_30 = ativo.history(period="30d")['Close'].mean()
             status = "🔥 BARATO" if p_atual < m_30 else "💎 CARO"
             acao = "✅ COMPRAR" if p_atual < m_30 else "⚠️ ESPERAR"
             divs = ativo.dividends.last("365D").sum() if t != "BTC-USD" else 0.0
@@ -43,77 +42,79 @@ for t in tickers:
 
 df_radar = pd.DataFrame(dados_finais)
 
-# --- SEÇÃO 1: RADAR ---
+# --- RADAR ---
 st.subheader("🛰️ Radar de Ativos")
 df_display = df_radar.copy()
 for col in ["Preço", "Média 30d", "Div. 12m"]:
     df_display[col] = df_display[col].apply(lambda x: f"R$ {x:.2f}")
 st.table(df_display)
 
-# --- SEÇÃO 2: PSICOLOGIA DO MERCADO (TERMÔMETRO) ---
+# --- TERMÔMETRO ---
 st.markdown("---")
-st.subheader("🌡️ Termômetro de Ganância (Market Sentiment)")
-
+st.subheader("🌡️ Termômetro de Ganância")
 caros = len(df_radar[df_radar['Status'] == "💎 CARO"])
-total = len(df_radar)
-score = (caros / total) * 100
+score = (caros / len(df_radar)) * 100 if len(df_radar) > 0 else 0
 t1, t2 = st.columns([1, 2])
 with t1:
     if score <= 25: st.error("😨 MEDO EXTREMO")
-    elif score <= 50: st.warning("⚖️ NEUTRO / CAUTELA")
+    elif score <= 50: st.warning("⚖️ NEUTRO")
     elif score <= 75: st.info("🤑 GANÂNCIA")
     else: st.success("🚀 EUFORIA TOTAL")
 with t2:
     st.progress(score / 100)
-    st.write(f"Índice de Ganância: **{score:.0f}%**")
+    st.write(f"Índice: **{score:.0f}%**")
 
-# --- SEÇÃO 3: ALERTAS ---
-st.markdown("---")
-st.subheader("🎯 Alertas de Preço Alvo")
-col_a1, col_a2 = st.columns(2)
-with col_a1:
-    alvo_ativo = st.selectbox("Ativo alvo:", tickers)
-    p_alvo = st.number_input(f"Alvo para {alvo_ativo}:", value=0.0)
-with col_a2:
-    if p_alvo > 0:
-        p_real = df_radar[df_radar['Ativo'] == alvo_ativo]['Preço'].values[0]
-        if p_real <= p_alvo: st.success("🚀 OPORTUNIDADE ATINGIDA!")
-        else: st.info(f"Preço Atual: R$ {p_real:.2f} | Falta: R$ {p_real - p_alvo:.2f}")
-
-# --- SEÇÃO 4: GESTOR XP (COM CHAVE SELETORA RESTAURADA) ---
+# --- GESTOR XP COM CAMPO DE PATRIMÔNIO RESTAURADO ---
 st.markdown("---")
 c_calc, c_res = st.columns([1, 1.2])
 with c_calc:
     st.subheader("🧮 Gestor XP")
     with st.expander("Sua Ordem", expanded=True):
-        # CHAVE SELETORA RESTAURADA ABAIXO
         tipo_ordem = st.selectbox("Estratégia da Ordem:", ("A Mercado", "Limitada", "Stop Loss", "Stop Móvel"))
         v_envio = st.number_input("Valor enviado (R$):", value=50.0)
         p_pago = st.number_input("Preço da cota (R$):", value=31.0)
         c_at = st.number_input("Cotas que já possui:", value=0)
-        pm_at = st.number_input("Preço Médio (PM) atual:", value=0.0)
+        pm_at = st.number_input("Preço Médio atual:", value=0.0)
         
         n_cotas = int(v_envio // p_pago)
         troco = v_envio % p_pago
+        
+        # Lógica de Patrimônio e Lucro (Usando PETR4 como base de simulação)
+        try:
+            p_mercado = df_radar[df_radar['Ativo'] == "PETR4.SA"]['Preço'].values[0]
+        except:
+            p_mercado = p_pago
+            
+        patrimonio_simulado = (n_cotas * p_mercado) + troco
+        lucro_simulado = patrimonio_simulado - v_envio
+        
         n_pm = ((c_at * pm_at) + (n_cotas * p_pago)) / (c_at + n_cotas) if c_at > 0 else p_pago
 
 with c_res:
     st.subheader("📊 Resultado")
-    st.caption(f"Execução: **{tipo_ordem}**") # Mostra a estratégia escolhida
+    st.caption(f"Execução: **{tipo_ordem}**")
+    
+    # Linha 1: Cotas e Troco
     r1, r2 = st.columns(2)
     r1.metric("Cotas Novas", f"{n_cotas} un")
     r2.metric("Troco", f"R$ {troco:.2f}")
-    if c_at > 0: st.metric("Novo Preço Médio", f"R$ {n_pm:.2f}")
+    
+    # Linha 2: Patrimônio Total (RESTABELECIDO)
+    st.metric("Patrimônio Total (Nesta Ordem)", f"R$ {patrimonio_simulado:.2f}", f"R$ {lucro_simulado:.2f}")
+    
+    # Linha 3: Novo PM
+    if c_at > 0:
+        st.metric("Seu Novo Preço Médio", f"R$ {n_pm:.2f}")
 
-# --- SEÇÃO 5: RENDA PASSIVA ---
+# --- PROJEÇÃO DE RENDA ---
 st.markdown("---")
 st.subheader("💰 Projeção de Renda")
 a_div = st.selectbox("Simular ativo:", tickers)
-q_sim = st.number_input("Qtd. de cotas para simulação:", value=100)
+q_sim = st.number_input("Qtd. de cotas:", value=100)
 dv = df_radar[df_radar['Ativo'] == a_div]['Div. 12m'].values[0] if not df_radar[df_radar['Ativo'] == a_div].empty else 0
-st.metric(f"Renda Mensal ({a_div})", f"R$ {(dv * q_sim / 12):.2f}")
+st.metric(f"Renda Mensal Est. ({a_div})", f"R$ {(dv * q_sim / 12):.2f}")
 
-# --- SEÇÃO 6: GRÁFICO ---
+# --- GRÁFICO ---
 st.markdown("---")
 st.subheader("📈 Tendência 30d")
 sel_graf = st.selectbox("Ver histórico de:", tickers)
