@@ -20,7 +20,7 @@ st.title("💰 IA Rockefeller: Inteligência e Radar")
 st.sidebar.markdown("### ⚙️ Painel de Controle")
 capital_disponivel = st.sidebar.number_input("Seu Capital Disponível (R$)", value=1000.0)
 
-# 3. A Tabela Exata de Ontem
+# 3. A Tabela com as colunas: Preço, Média, Caro/Barato, Comprar/Vender e Dividendos
 st.subheader("🛰️ Radar de Ativos Estratégicos")
 tickers = ["PETR4.SA", "VALE3.SA", "MXRF11.SA", "BTC-USD"]
 dados_finais = []
@@ -28,28 +28,37 @@ dados_finais = []
 for t in tickers:
     ativo = yf.Ticker(t)
     hist_1d = ativo.history(period="1d")
+    
     if not hist_1d.empty:
         preco_atual = hist_1d['Close'].iloc[-1]
         
-        # Média de 30 dias para a tabela
+        # Média de 30 dias
         hist_30d = ativo.history(period="30d")
         media_30 = hist_30d['Close'].mean()
         
-        # Status de ontem
-        status = "🔥 BARATO" if preco_atual < media_30 else "💎 FORTE"
+        # Lógica: Caro ou Barato
+        status = "🔥 BARATO" if preco_atual < media_30 else "💎 CARO"
         
-        # Montando a linha da tabela exatamente como ontem
+        # Lógica: Comprar ou Vender
+        decisao = "✅ COMPRAR" if preco_atual < media_30 else "⚠️ AGUARDAR / VENDER"
+        
+        # Busca Dividendos (Soma dos últimos 12 meses)
+        # Para BTC-USD o dividendo será 0.00
+        dividendos = ativo.dividends.last("365D").sum() if t != "BTC-USD" else 0.0
+        
         dados_finais.append({
             "Ativo": t, 
             "Preço": f"R$ {preco_atual:.2f}", 
             "Média (30d)": f"R$ {media_30:.2f}",
-            "Análise": status
+            "Status": status,
+            "Ação": decisao,
+            "Dividendos (12m)": f"R$ {dividendos:.2f}"
         })
 
 df = pd.DataFrame(dados_finais)
-st.table(df) # Exibição em formato de tabela fixa como ontem
+st.table(df)
 
-# 4. Integração da Calculadora de Hoje
+# 4. Integração da Calculadora de Hoje (Sua Ordem XP)
 st.markdown("---")
 col1, col2 = st.columns(2)
 
@@ -69,7 +78,7 @@ with col1:
 
 with col2:
     st.subheader("📊 Resultado em Tempo Real")
-    st.metric("Cotas Adquiridas", f"{qtd_cotas} un")
+    st.metric("Cotas Adquiridas (PETR4)", f"{qtd_cotas} un")
     st.metric("Patrimônio Atual", f"R$ {patrimonio_hj:.2f}", f"R$ {lucro_abs:.2f}")
 
 # 5. Gráfico de Tendência
@@ -79,4 +88,4 @@ escolha = st.selectbox("Selecione o ativo para o gráfico:", tickers)
 dados_grafico = yf.Ticker(escolha).history(period="30d")['Close']
 st.line_chart(dados_grafico)
 
-st.sidebar.info(f"Monitorando {len(tickers)} ativos.")
+st.sidebar.info(f"Monitorando {len(tickers)} ativos com inteligência Rockefeller.")
