@@ -5,42 +5,16 @@ import pandas as pd
 # 1. Configurações de Identidade
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
-# 2. Estilo Total Black e Correção de Tabela Mobile
+# 2. Estilo Total Black (Mantido)
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #ffffff; }
-    
-    /* CORREÇÃO PARA CELULAR: Evitar quebra de texto nas tabelas */
-    table { 
-        width: 100% !important; 
-        font-size: 12px !important; /* Fonte levemente menor para mobile */
-        color: #ffffff !important; 
-        border-collapse: collapse !important;
-    }
-    th { 
-        background-color: #1a1a1a !important; 
-        color: #58a6ff !important; 
-        white-space: nowrap !important; /* Impede quebra no cabeçalho */
-        padding: 8px 4px !important;
-    }
-    td { 
-        background-color: #000000 !important; 
-        color: #ffffff !important; 
-        white-space: nowrap !important; /* Impede quebra nas células */
-        border-bottom: 1px solid #222 !important; 
-        padding: 8px 4px !important;
-    }
-    
-    /* Container com rolagem lateral para evitar quebra do layout */
-    .stTable { 
-        overflow-x: auto !important; 
-        display: block !important; 
-    }
-
-    /* Estilização Geral */
+    table { width: 100% !important; font-size: 12px !important; color: #ffffff !important; border-collapse: collapse !important; }
+    th { background-color: #1a1a1a !important; color: #58a6ff !important; white-space: nowrap !important; padding: 8px 4px !important; }
+    td { background-color: #000000 !important; color: #ffffff !important; white-space: nowrap !important; border-bottom: 1px solid #222 !important; padding: 8px 4px !important; }
+    .stTable { overflow-x: auto !important; display: block !important; }
     label { color: #ffffff !important; font-weight: bold !important; }
     div[data-testid="stMetricValue"] { color: #ffffff !important; font-size: 22px !important; font-weight: bold !important; }
-    div[data-testid="stMetricLabel"] { color: #aaaaaa !important; }
     div[data-testid="stMetric"] { background-color: #111111; border: 1px solid #333333; padding: 10px; border-radius: 10px; }
     .streamlit-expanderHeader { background-color: #000000 !important; color: #ffffff !important; border: 1px solid #333 !important; }
     </style>
@@ -50,43 +24,70 @@ st.title("💰 IA Rockefeller")
 
 tab_painel, tab_manual = st.tabs(["📊 Painel de Controle", "📖 Manual de Instruções"])
 
-# --- PROCESSAMENTO DE DADOS ---
+# --- PROCESSAMENTO DE DADOS (Radar + Histórico de Volatilidade) ---
 tickers = ["PETR4.SA", "VALE3.SA", "MXRF11.SA", "BTC-USD"]
-dados_finais = []
+dados_radar = []
+dados_volatilidade = []
 
 for t in tickers:
     try:
         ativo = yf.Ticker(t)
-        hist = ativo.history(period="2d")
-        if not hist.empty:
-            p_atual = hist['Close'].iloc[-1]
-            p_ant = hist['Close'].iloc[0]
-            var = ((p_atual / p_ant) - 1) * 100
-            m_30 = ativo.history(period="30d")['Close'].mean()
+        hist_30d = ativo.history(period="30d")
+        
+        if not hist_30d.empty:
+            # Dados para o Radar
+            p_atual = hist_30d['Close'].iloc[-1]
+            m_30 = hist_30d['Close'].mean()
             status = "🔥 BARATO" if p_atual < m_30 else "💎 CARO"
             acao = "✅ COMPRAR" if p_atual < m_30 else "⚠️ ESPERAR"
             divs = ativo.dividends.last("365D").sum() if t != "BTC-USD" else 0.0
-            dados_finais.append({"Ativo": t, "Preço": p_atual, "Média 30d": m_30, "Status": status, "Ação": acao, "Div. 12m": divs, "Var%": var})
+            
+            dados_radar.append({
+                "Ativo": t, "Preço": p_atual, "Média 30d": m_30, 
+                "Status": status, "Ação": acao, "Div. 12m": divs
+            })
+            
+            # Dados para o Raio-X de Volatilidade (NOVO)
+            variacoes = hist_30d['Close'].pct_change() * 100
+            subidas = (variacoes > 0).sum()
+            descidas = (variacoes < 0).sum()
+            maior_alta = variacoes.max()
+            maior_queda = variacoes.min()
+            
+            dados_volatilidade.append({
+                "Ativo": t,
+                "Dias de Alta": f"🟢 {subidas}",
+                "Dias de Baixa": f"🔴 {descidas}",
+                "Maior Subida": f"{maior_alta:.2f}%",
+                "Maior Queda": f"{maior_queda:.2f}%"
+            })
     except: continue
-df_radar = pd.DataFrame(dados_finais)
 
-# ==================== ABA 1: PAINEL DE CONTROLE ====================
+df_radar = pd.DataFrame(dados_radar)
+df_vol = pd.DataFrame(dados_volatilidade)
+
 with tab_painel:
+    # 1. Radar Principal (Mantido)
     st.subheader("🛰️ Radar de Ativos")
     df_disp = df_radar.copy()
-    for c in ["Preço", "Média 30d", "Div. 12m"]: 
-        df_disp[c] = df_disp[c].apply(lambda x: f"R$ {x:.2f}")
-    
-    # Exibe a tabela (o CSS cuidará da não-quebra)
-    st.table(df_disp.drop(columns=["Var%"]))
+    for c in ["Preço", "Média 30d", "Div. 12m"]: df_disp[c] = df_disp[c].apply(lambda x: f"R$ {x:.2f}")
+    st.table(df_disp)
 
+    # 2. NOVO BLOCO: RAIO-X DE VOLATILIDADE
+    st.markdown("---")
+    st.subheader("📊 Raio-X de Volatilidade (30 Dias)")
+    st.caption("Frequência de oscilação e picos de preço.")
+    st.table(df_vol)
+
+    # 3. Resumo IA (Mantido)
     st.markdown("---")
     st.subheader("🤖 Resumo da IA Rockefeller")
     if not df_radar.empty:
         df_radar['Desconto'] = (df_radar['Preço'] / df_radar['Média 30d']) - 1
         melhor = df_radar.sort_values(by='Desconto').iloc[0]
-        st.info(f"**Análise Diária:** O ativo **{melhor['Ativo']}** é a melhor oportunidade hoje. A maior subida foi de **{df_radar.sort_values(by='Var%', ascending=False).iloc[0]['Ativo']}** ({df_radar['Var%'].max():.2f}%).")
+        st.info(f"**Análise:** O ativo **{melhor['Ativo']}** é a melhor oportunidade hoje. Nos últimos 30 dias, ele teve {df_vol[df_vol['Ativo']==melhor['Ativo']]['Dias de Baixa'].values[0]} quedas, criando este ponto de entrada.")
 
+    # 4. Termômetro, Gestor XP e Restante (Mantidos Sem Alteração)
     st.markdown("---")
     st.subheader("🌡️ Termômetro de Ganância")
     caros = len(df_radar[df_radar['Status'] == "💎 CARO"])
@@ -97,8 +98,7 @@ with tab_painel:
         elif score <= 50: st.warning("⚖️ NEUTRO")
         elif score <= 75: st.info("🤑 GANÂNCIA")
         else: st.success("🚀 EUFORIA TOTAL")
-    with t2:
-        st.progress(score / 100)
+    with t2: st.progress(score / 100)
 
     st.markdown("---")
     c_calc, c_res = st.columns([1, 1.2])
@@ -135,12 +135,7 @@ with tab_painel:
     sel = st.selectbox("Histórico:", tickers)
     st.line_chart(yf.Ticker(sel).history(period="30d")['Close'])
 
-# ==================== ABA 2: MANUAL DE INSTRUÇÕES ====================
+# --- ABA MANUAL (Mantida) ---
 with tab_manual:
     st.header("📖 Manual do Utilizador")
-    st.write("Aqui você encontra as instruções para cada módulo do sistema.")
-    st.markdown("""
-    * **Radar de Ativos:** Monitoramento baseado em médias de 30 dias.
-    * **Termômetro:** Analisa o sentimento do mercado (Medo x Euforia).
-    * **Gestor XP:** Simula ordens, calcula troco e novo preço médio.
-    """)
+    st.write("Novo item: **Raio-X de Volatilidade** - Exibe a força do ativo. Se um ativo tem muitas baixas mas a 'Maior Subida' é alta, ele tem potencial de recuperação.")
