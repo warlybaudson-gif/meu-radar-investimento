@@ -70,11 +70,28 @@ with tab_painel:
     for c in ["Preço", "Média 30d", "Div. 12m"]: df_disp[c] = df_disp[c].apply(lambda x: f"R$ {x:.2f}")
     st.table(df_disp.drop(columns=["Var_Hoje"]))
 
-    # 2. RAIO-X DE VOLATILIDADE
+    # 2. TERMÔMETRO DE GANÂNCIA (Adicionado conforme pedido)
+    st.markdown("---")
+    st.subheader("🌡️ Termômetro de Ganância (Sentiment)")
+    
+    caros = len(df_radar[df_radar['Status'] == "💎 CARO"])
+    score = (caros / len(df_radar)) * 100 if len(df_radar) > 0 else 0
+    t1, t2 = st.columns([1, 2])
+    with t1:
+        if score <= 25: st.error("😨 MEDO EXTREMO")
+        elif score <= 50: st.warning("⚖️ NEUTRO / CAUTELA")
+        elif score <= 75: st.info("🤑 GANÂNCIA")
+        else: st.success("🚀 EUFORIA TOTAL")
+    with t2:
+        st.progress(score / 100)
+        st.write(f"Índice de Ganância: **{score:.0f}%**")
+
+    # 3. RAIO-X DE VOLATILIDADE
+    st.markdown("---")
     st.subheader("📊 Raio-X de Volatilidade (30 Dias)")
     st.table(df_vol)
 
-    # 3. RESUMO IA E ALERTAS
+    # 4. RESUMO IA E ALERTAS
     st.markdown("---")
     col_ia, col_alerta = st.columns([1.5, 1])
     with col_ia:
@@ -94,7 +111,7 @@ with tab_painel:
         p_agora = df_radar[df_radar['Ativo'] == ativo_alvo]['Preço'].values[0] if not df_radar.empty else 0
         if p_alvo > 0 and p_agora <= p_alvo: st.success("🚀 ALVO ATINGIDO!")
 
-    # 4. GESTOR XP COMPLETO (PM E PATRIMÔNIO)
+    # 5. GESTOR XP COMPLETO (PM E PATRIMÔNIO)
     st.markdown("---")
     st.subheader("🧮 Gestor XP (Foco PETR4)")
     c_in, c_out = st.columns([1, 1.2])
@@ -120,7 +137,7 @@ with tab_painel:
         st.metric("Patrimônio Total", f"R$ {patri:.2f}", f"R$ {patri - v_env:.2f}")
         if c_at > 0: st.metric("Novo Preço Médio", f"R$ {n_pm:.2f}")
 
-    # 5. RENDA E GRÁFICO
+    # 6. RENDA E GRÁFICO
     st.markdown("---")
     col_renda, col_grafico = st.columns([1, 1.5])
     with col_renda:
@@ -138,4 +155,4 @@ with tab_painel:
 # --- MANUAL ---
 with tab_manual:
     st.header("📖 Manual do Usuário")
-    st.write("Versão Final: Radar, Volatilidade, Resumo IA, Alertas, Gestor XP (PM/Patrimônio), Renda e Gráficos.")
+    st.write("Versão Final Blindada: Radar, Termômetro, Volatilidade, Resumo IA, Alertas, Gestor XP (PM/Patrimônio), Renda e Gráficos.")
