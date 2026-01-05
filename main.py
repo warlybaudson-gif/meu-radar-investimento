@@ -63,6 +63,7 @@ for t in tickers:
 df_radar = pd.DataFrame(dados_radar)
 df_vol = pd.DataFrame(dados_volatilidade)
 
+# ==================== ABA 1: PAINEL DE CONTROLE ====================
 with tab_painel:
     # 1. RADAR
     st.subheader("🛰️ Radar de Ativos")
@@ -70,10 +71,9 @@ with tab_painel:
     for c in ["Preço", "Média 30d", "Div. 12m"]: df_disp[c] = df_disp[c].apply(lambda x: f"R$ {x:.2f}")
     st.table(df_disp.drop(columns=["Var_Hoje"]))
 
-    # 2. TERMÔMETRO DE GANÂNCIA (Adicionado conforme pedido)
+    # 2. TERMÔMETRO
     st.markdown("---")
-    st.subheader("🌡️ Termômetro de Ganância (Sentiment)")
-    
+    st.subheader("🌡️ Termômetro de Ganância")
     caros = len(df_radar[df_radar['Status'] == "💎 CARO"])
     score = (caros / len(df_radar)) * 100 if len(df_radar) > 0 else 0
     t1, t2 = st.columns([1, 2])
@@ -86,12 +86,12 @@ with tab_painel:
         st.progress(score / 100)
         st.write(f"Índice de Ganância: **{score:.0f}%**")
 
-    # 3. RAIO-X DE VOLATILIDADE
+    # 3. RAIO-X
     st.markdown("---")
     st.subheader("📊 Raio-X de Volatilidade (30 Dias)")
     st.table(df_vol)
 
-    # 4. RESUMO IA E ALERTAS
+    # 4. RESUMO E ALERTA
     st.markdown("---")
     col_ia, col_alerta = st.columns([1.5, 1])
     with col_ia:
@@ -111,13 +111,12 @@ with tab_painel:
         p_agora = df_radar[df_radar['Ativo'] == ativo_alvo]['Preço'].values[0] if not df_radar.empty else 0
         if p_alvo > 0 and p_agora <= p_alvo: st.success("🚀 ALVO ATINGIDO!")
 
-    # 5. GESTOR XP COMPLETO (PM E PATRIMÔNIO)
+    # 5. GESTOR XP
     st.markdown("---")
     st.subheader("🧮 Gestor XP (Foco PETR4)")
     c_in, c_out = st.columns([1, 1.2])
     with c_in:
         with st.expander("Configurar Ordem", expanded=True):
-            tipo_ord = st.selectbox("Estratégia:", ("A Mercado", "Limitada", "Stop"))
             v_env = st.number_input("Valor Enviado (R$):", value=50.0)
             p_sug = df_radar[df_radar['Ativo'] == "PETR4.SA"]['Preço'].values[0] if not df_radar.empty else 31.0
             p_pg = st.number_input("Preço da Cota (R$):", value=float(p_sug))
@@ -130,7 +129,6 @@ with tab_painel:
         p_mkt = df_radar[df_radar['Ativo'] == "PETR4.SA"]['Preço'].values[0] if not df_radar.empty else p_pg
         patri = (n_cotas * p_mkt) + troco
         n_pm = ((c_at * pm_at) + (n_cotas * p_pg)) / (c_at + n_cotas) if (c_at + n_cotas) > 0 else 0
-        
         m1, m2 = st.columns(2)
         m1.metric("Cotas Novas", f"{n_cotas} un")
         m2.metric("Troco", f"R$ {troco:.2f}")
@@ -152,7 +150,55 @@ with tab_painel:
         sel = st.selectbox("Histórico:", tickers, key="graf")
         st.line_chart(yf.Ticker(sel).history(period="30d")['Close'])
 
-# --- MANUAL ---
+# ==================== ABA 2: MANUAL DIDÁTICO ====================
 with tab_manual:
-    st.header("📖 Manual do Usuário")
-    st.write("Versão Final Blindada: Radar, Termômetro, Volatilidade, Resumo IA, Alertas, Gestor XP (PM/Patrimônio), Renda e Gráficos.")
+    st.header("📖 Manual de Instruções - IA Rockefeller")
+    st.write("Este guia explica como interpretar cada ferramenta do seu painel para tomar as melhores decisões financeiras.")
+
+    # ITEM 1
+    with st.expander("🛰️ 1. Radar de Ativos", expanded=True):
+        st.markdown("""
+        **O que é:** Monitoramento em tempo real dos preços atuais comparados à média dos últimos 30 dias.
+        * **Preço:** Valor atual da cota na Bolsa.
+        * **Média 30d:** O preço 'justo' do último mês.
+        * **Status 🔥 BARATO:** O preço atual está abaixo da média. Ótimo momento para compra.
+        * **Status 💎 CARO:** O preço atual está acima da média. Momento de cautela.
+        * **Ação:** Sugestão direta baseada no desconto matemático do ativo.
+        """)
+
+    # ITEM 2
+    with st.expander("🌡️ 2. Termômetro de Ganância"):
+        st.markdown("""
+        **O que é:** Um indicador de sentimento de mercado baseado na sua lista de ativos.
+        * **Como funciona:** Ele calcula quantos ativos estão 'Caros'. Se a maioria estiver cara, o mercado está em **Euforia** (risco de queda). Se a maioria estiver barata, o mercado está em **Medo** (oportunidade de compra).
+        * **Dica:** Compre no Medo, espere na Euforia.
+        """)
+
+    # ITEM 3
+    with st.expander("📊 3. Raio-X de Volatilidade"):
+        st.markdown("""
+        **O que é:** Um histórico de 'saúde' e comportamento do ativo nos últimos 30 dias.
+        * **Dias Alta/Baixa:** Mostra se o ativo é mais comprador (verde) ou vendedor (vermelho).
+        * **Pico/Fundo Mensal:** Mostra o máximo que o ativo subiu ou caiu no mês.
+        * **Alerta 🚨 RECORDE:** Aparece quando a queda de hoje é a maior dos últimos 30 dias. É o sinal de 'promoção máxima'.
+        """)
+
+    # ITEM 4
+    with st.expander("🧮 4. Gestor XP (Simulador de Ordens)"):
+        st.markdown("""
+        **O que é:** Ferramenta para prever o impacto da sua compra antes de executá-la na corretora.
+        * **Valor Enviado:** Quanto dinheiro você pretende gastar.
+        * **Troco:** Valor que sobrará na conta da corretora após comprar apenas cotas inteiras.
+        * **Patrimônio Total:** Valor real do seu investimento somado ao troco. Se o mercado cair logo após a compra, o valor mostrará a variação negativa.
+        * **Novo Preço Médio:** O cálculo mais importante. Ele mostra como a nova compra vai alterar o custo médio total das suas ações.
+        """)
+
+    # ITEM 5
+    with st.expander("💰 5. Renda Passiva & Tendência"):
+        st.markdown("""
+        **O que é:** Projeção de ganhos futuros e visualização gráfica.
+        * **Renda Mensal:** Pega o histórico de dividendos de 12 meses e projeta quanto você receberá por mês com a quantidade de cotas que você possui.
+        * **Gráfico de Tendência:** Visualização da 'viagem' do preço nos últimos 30 dias para identificar se o ativo está em subida ou descida constante.
+        """)
+
+    st.info("💡 **Dica de Ouro:** O segredo da riqueza é comprar ativos quando o Radar diz 'Barato' e o Raio-X mostra um 'Recorde de Queda'.")
