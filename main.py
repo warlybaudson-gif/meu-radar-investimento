@@ -5,7 +5,7 @@ import pandas as pd
 # 1. Configurações de Identidade
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
-# 2. Estilo Total Black e Mobile (Mantido)
+# 2. Estilo Total Black e Mobile (Ajustado)
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #ffffff; }
@@ -24,7 +24,7 @@ st.title("💰 IA Rockefeller")
 
 tab_painel, tab_manual = st.tabs(["📊 Painel de Controle", "📖 Manual de Instruções"])
 
-# --- PROCESSAMENTO DE DADOS (Radar + Volatilidade + Recordes) ---
+# --- PROCESSAMENTO DE DADOS (PETR4 INCLUÍDA) ---
 tickers = ["PETR4.SA", "VALE3.SA", "MXRF11.SA", "BTC-USD"]
 dados_radar = []
 dados_volatilidade = []
@@ -41,7 +41,6 @@ for t in tickers:
             acao = "✅ COMPRAR" if p_atual < m_30 else "⚠️ ESPERAR"
             divs = ativo.dividends.last("365D").sum() if t != "BTC-USD" else 0.0
             
-            # Dados de variação para Volatilidade
             variacoes = hist_30d['Close'].pct_change() * 100
             subidas = (variacoes > 0).sum()
             descidas = (variacoes < 0).sum()
@@ -49,7 +48,6 @@ for t in tickers:
             maior_queda = variacoes.min()
             var_hoje = variacoes.iloc[-1] if not pd.isna(variacoes.iloc[-1]) else 0.0
             
-            # Checar se hoje é a maior queda do mês
             is_recorde_queda = "🚨 RECORDE" if var_hoje <= maior_queda and var_hoje < 0 else ""
             
             dados_radar.append({
@@ -76,24 +74,24 @@ with tab_painel:
     for c in ["Preço", "Média 30d", "Div. 12m"]: df_disp[c] = df_disp[c].apply(lambda x: f"R$ {x:.2f}")
     st.table(df_disp.drop(columns=["Var_Hoje"]))
 
-    # 2. Resumo da IA com Destaque de Recorde
+    # 2. Resumo da IA
     st.markdown("---")
     st.subheader("🤖 Resumo da IA Rockefeller")
     if not df_radar.empty:
         recorde_ativo = df_vol[df_vol['Alerta'] == "🚨 RECORDE"]
         if not recorde_ativo.empty:
-            st.error(f"⚠️ **ALERTA DE FUNDO:** O ativo **{recorde_ativo.iloc[0]['Ativo']}** atingiu hoje sua maior queda dos últimos 30 dias ({recorde_ativo.iloc[0]['Fundo Mensal']}). Ponto de atenção máximo para compra!")
+            st.error(f"⚠️ **ALERTA DE FUNDO:** O ativo **{recorde_ativo.iloc[0]['Ativo']}** atingiu hoje sua maior queda do mês!")
         else:
             df_radar['Desconto'] = (df_radar['Preço'] / df_radar['Média 30d']) - 1
             melhor = df_radar.sort_values(by='Desconto').iloc[0]
-            st.info(f"**Análise:** Sem quedas recordes hoje. A melhor oportunidade técnica segue sendo **{melhor['Ativo']}**.")
+            st.info(f"**Análise:** O foco hoje é **{melhor['Ativo']}**, com o melhor desconto técnico sobre a média.")
 
     # 3. Raio-X de Volatilidade
     st.markdown("---")
     st.subheader("📊 Raio-X de Volatilidade (30 Dias)")
     st.table(df_vol)
 
-    # 4. Termómetro, Gestor XP e Gráficos (Mantidos)
+    # 4. Termómetro
     st.markdown("---")
     st.subheader("🌡️ Termómetro de Ganância")
     caros = len(df_radar[df_radar['Status'] == "💎 CARO"])
@@ -105,20 +103,39 @@ with tab_painel:
         else: st.success("🚀 EUFORIA")
     with t2: st.progress(score / 100)
 
+    # 5. Gestor XP (PETR4 DEFINIDA COMO PADRÃO)
     st.markdown("---")
-    st.subheader("🧮 Gestor XP")
-    v_env = st.number_input("Valor (R$):", value=50.0)
-    p_pg = st.number_input("Preço Cota (R$):", value=31.0)
-    n_cotas = int(v_env // p_pg)
-    st.metric("Cotas Novas", f"{n_cotas} un")
-    st.metric("Troco", f"R$ {v_env % p_pg:.2f}")
+    c_calc, c_res = st.columns([1, 1.2])
+    with c_calc:
+        st.subheader("🧮 Gestor XP")
+        with st.expander("Sua Ordem", expanded=True):
+            v_env = st.number_input("Valor (R$):", value=50.0)
+            # Busca o preço real da PETR4 para sugerir no campo
+            p_petr_sugerido = df_radar[df_radar['Ativo'] == "PETR4.SA"]['Preço'].values[0] if not df_radar.empty else 31.0
+            p_pg = st.number_input("Preço da Cota (R$):", value=float(p_petr_sugerido))
+            c_at = st.number_input("Cotas atuais:", value=0)
+            pm_at = st.number_input("PM atual:", value=0.0)
+            
+            n_cotas = int(v_env // p_pg)
+            troco = v_env % p_pg
+            n_pm = ((c_at * pm_at) + (n_cotas * p_pg)) / (c_at + n_cotas) if c_at > 0 else p_pg
+    with c_res:
+        st.subheader("📊 Resultado")
+        st.metric("Cotas Novas", f"{n_cotas} un")
+        st.metric("Troco", f"R$ {troco:.2f}")
+        # Patrimônio baseado no preço real da PETR4 agora
+        p_mkt = df_radar[df_radar['Ativo'] == "PETR4.SA"]['Preço'].values[0] if not df_radar.empty else p_pg
+        patri = (n_cotas * p_mkt) + troco
+        st.metric("Patrimônio Total", f"R$ {patri:.2f}", f"R$ {patri - v_env:.2f}")
+        if c_at > 0: st.metric("Novo PM", f"R$ {n_pm:.2f}")
 
+    # 6. Gráfico
     st.markdown("---")
     st.subheader("📈 Tendência 30d")
     sel = st.selectbox("Histórico:", tickers)
     st.line_chart(yf.Ticker(sel).history(period="30d")['Close'])
 
-# --- MANUAL ---
+# --- ABA MANUAL ---
 with tab_manual:
     st.header("📖 Manual do Utilizador")
-    st.write("**Destaque:** O sistema agora monitoriza se a queda de hoje é a maior do mês. Se for, aparecerá um alerta vermelho '🚨 RECORDE' no Raio-X.")
+    st.write("O sistema processa PETR4.SA, VALE3.SA, MXRF11.SA e BTC-USD. O Gestor XP usa a PETR4 como ativo padrão de referência.")
