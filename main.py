@@ -23,7 +23,7 @@ st.markdown("""
         border-collapse: collapse;
         font-family: 'Courier New', Courier, monospace;
         margin-bottom: 20px;
-        font-size: 0.85rem; /* Fonte ligeiramente menor para mobile */
+        font-size: 0.85rem;
     }
     .rockefeller-table th {
         background-color: #1a1a1a;
@@ -43,6 +43,13 @@ st.markdown("""
         border: 1px solid #333333; 
         border-radius: 8px;
         text-align: center;
+    }
+    
+    /* Estilo para o Manual Didático */
+    .manual-section {
+        border-left: 3px solid #58a6ff;
+        padding-left: 15px;
+        margin-bottom: 25px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -117,7 +124,6 @@ with tab_painel:
     """
     st.markdown(html_radar, unsafe_allow_html=True)
 
-    # 2. RAIO-X DE VOLATILIDADE (Ajustado para Celular)
     st.subheader("📊 Raio-X de Volatilidade")
     html_vol = f"""
     <div class="mobile-table-container">
@@ -171,7 +177,6 @@ with tab_painel:
                 v_ativos_total += v_agora
                 df_grafico[nome] = yf.Ticker(t_raw).history(period="30d")['Close']
 
-        # Tabela da Carteira (HTML para Mobile)
         html_carteira = f"""
         <div class="mobile-table-container">
             <table class="rockefeller-table">
@@ -204,10 +209,58 @@ with tab_painel:
         st.subheader("📈 Comparativo de Performance")
         st.line_chart(df_grafico)
 
-# ==================== ABA 2: MANUAL DE INSTRUÇÕES ====================
+# ==================== ABA 2: MANUAL DIDÁTICO ====================
 with tab_manual:
-    st.header("📖 Manual Rockefeller")
-    st.markdown("### 1. Radar de Ativos\nIdentifica oportunidades comparando Preço vs Média.")
-    st.markdown("### 2. Volatilidade\nAnalisa o risco. O alerta 🚨 RECORDE avisa se o preço é a mínima do mês.")
-    st.markdown("### 3. Carteira Dinâmica\nCalcula lucro e renda apenas dos ativos habilitados.")
-    st.markdown("### 4. Patrimônio Global\nConsolida Bolsa, Saldo e Ouro físico.")
+    st.header("📖 Guia de Operação - Sistema Rockefeller")
+    st.write("Siga este manual para interpretar os dados e gerir sua riqueza com precisão matemática.")
+
+    st.markdown("### 1. Radar de Ativos (Inteligência de Preço)")
+    st.markdown("""
+    <div class="manual-section">
+    Este módulo identifica distorções de preço no curto prazo.
+    <ul>
+        <li><b>Preço (R$):</b> Valor atual de mercado. Ativos em dólar são convertidos automaticamente.</li>
+        <li><b>Média 30d:</b> O ponto de equilíbrio. Representa o valor comum do ativo no último mês.</li>
+        <li><b>Status 🔥 BARATO:</b> O preço está abaixo da média. Indica uma <b>oportunidade de compra</b> técnica.</li>
+        <li><b>Status 💎 CARO:</b> O preço está acima da média. Indica que o mercado pode estar supervalorizado.</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 2. Raio-X de Volatilidade (Análise de Risco)")
+    st.markdown("""
+    <div class="manual-section">
+    Entenda a "agressividade" do mercado nos últimos 30 dias.
+    <ul>
+        <li><b>Dias A/B (Alta/Baixa):</b> Se houver muito mais 🔴 do que 🟢, o ativo está em forte tendência de queda.</li>
+        <li><b>Pico e Fundo:</b> Mostra a variação máxima positiva e negativa. Útil para saber o quanto o ativo costuma oscilar.</li>
+        <li><b>Alerta 🚨 RECORDE:</b> O sinal mais importante. Indica que o preço hoje atingiu a <b>mínima absoluta</b> dos últimos 30 dias. É o sinal clássico de "fundo de mercado".</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 3. Gestor de Carteira Dinâmica (Seu Patrimônio)")
+    st.markdown("""
+    <div class="manual-section">
+    Onde você controla seus investimentos reais.
+    <ul>
+        <li><b>Habilitação:</b> Use o seletor para ativar apenas o que você possui. Isso limpa sua visão e ajusta os gráficos.</li>
+        <li><b>PM (Preço Médio):</b> Insira quanto você pagou por cada cota. O sistema usa isso para calcular seu <b>Lucro Real</b>.</li>
+        <li><b>Renda/Mês:</b> Uma estimativa de quanto você recebe de "salário" por mês em dividendos, baseada no histórico real de pagamentos.</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 4. Patrimônio Global e Gráficos")
+    st.markdown("""
+    <div class="manual-section">
+    A visão final do seu império financeiro.
+    <ul>
+        <li><b>Gráfico Dinâmico:</b> Mostra a linha de tendência de todos os ativos que você habilitou. Se você tem 3 ações, verá 3 linhas para comparar qual performa melhor.</li>
+        <li><b>Ouro e Minerais:</b> Diferente da bolsa, aqui você insere bens físicos. O sistema precifica o Ouro automaticamente pela cotação internacional.</li>
+        <li><b>Patrimônio Total:</b> A soma de TUDO: Dinheiro na XP + Ações + Ouro + Minerais.</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.info("💡 **Dica Estratégica:** Quando o Radar mostrar 'BARATO' e o Raio-X mostrar 'RECORDE', você está diante do melhor cenário de compra possível.")
