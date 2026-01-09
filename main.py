@@ -2,7 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 
-# 1. CONFIGURAÇÕES E ESTILO
+# 1. CONFIGURAÇÕES E ESTILO REFORÇADO
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
 st.markdown("""
@@ -17,13 +17,14 @@ st.markdown("""
     .rockefeller-table th { background-color: #1a1a1a; color: #58a6ff !important; text-align: center !important; padding: 10px; border-bottom: 2px solid #333; }
     .rockefeller-table td { padding: 10px; text-align: center !important; border-bottom: 1px solid #222; }
     div[data-testid="stMetric"] { background-color: #111111; border: 1px solid #333333; border-radius: 8px; text-align: center; }
+    .manual-section { border-left: 3px solid #58a6ff; padding-left: 15px; margin-bottom: 25px; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("💰 IA Rockefeller")
 tab_painel, tab_manual = st.tabs(["📊 Painel de Controle", "📖 Manual de Instruções"])
 
-# --- PROCESSAMENTO DE DADOS ---
+# --- PROCESSAMENTO DE DADOS (TEMPO REAL) ---
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
@@ -64,7 +65,6 @@ for nome_exibicao, t in tickers_map.items():
 df_radar = pd.DataFrame(dados_radar)
 
 with tab_painel:
-    # 🛰️ RADAR E RAIO-X (HTML CONSOLIDADO)
     st.subheader("🛰️ Radar de Ativos Estratégicos")
     html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
         <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Média 30d</th><th>Status</th></tr></thead>
@@ -98,7 +98,6 @@ with tab_painel:
                 info = df_radar[df_radar["Ativo"] == nome].iloc[0]
                 p_atual = info["V_Cru"]
                 
-                # CÁLCULOS AUTOMÁTICOS EM TEMPO REAL
                 pm_calculado = investido / qtd if qtd > 0 else 0.0
                 valor_atualizado = qtd * p_atual
                 lucro_prejuizo = valor_atualizado - investido
@@ -106,13 +105,12 @@ with tab_painel:
                 
                 lista_c.append({
                     "Ativo": nome, "Qtd": qtd, "PM (Auto)": f"{pm_calculado:.2f}",
-                    "Valor Atual": f"{valor_atualizado:.2f}", "Lucro/Prej": f"{lucro_prejuizo:.2f}", "Renda": f"{r_mes:.2f}"
+                    "Valor Atual": f"{valor_atualizado:.2f}", "Lucro/Prej": f"{lucro_prejuizo:.2f}"
                 })
                 renda_total += r_mes
                 v_ativos_total += valor_atualizado
                 df_grafico[nome] = yf.Ticker(info["Ticker_Raw"]).history(period="30d")['Close']
 
-        st.markdown("#### Resumo da Carteira")
         html_c = f"""<div class="mobile-table-container"><table class="rockefeller-table">
             <thead><tr><th>Ativo</th><th>Qtd</th><th>PM</th><th>Total Atual</th><th>Lucro/Prej</th></tr></thead>
             <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>R$ {r['PM (Auto)']}</td><td>R$ {r['Valor Atual']}</td><td>{r['Lucro/Prej']}</td></tr>" for r in lista_c])}</tbody>
@@ -122,29 +120,71 @@ with tab_painel:
         st.markdown("---")
         st.subheader("💰 Patrimônio Global")
         with st.sidebar:
-            st.header("⚙️ Outros Bens")
-            v_na_xp = st.number_input("Saldo Corretora (R$):", value=0.0)
-            g_joias = st.number_input("Ouro Físico (g):", value=0.0)
-            v_minerais = st.number_input("Outros Bens (R$):", value=0.0)
+            st.header("⚙️ Ajustes")
+            v_na_xp = st.number_input("Saldo na Corretora (R$):", value=0.0)
+            g_joias = st.number_input("Ouro (g):", value=0.0)
+            v_minerais = st.number_input("Bens (R$):", value=0.0)
 
         p_ouro = float(df_radar[df_radar['Ativo'] == "Jóias (Ouro)"]['V_Cru'].values[0])
         patri_global = v_ativos_total + v_na_xp + (g_joias * p_ouro) + v_minerais
         
         m1, m2, m3 = st.columns(3)
-        m1.metric("Ações/Criptos", f"R$ {v_ativos_total:,.2f}")
-        m2.metric("Renda Mensal", f"R$ {renda_total:,.2f}")
+        m1.metric("Ações/FIIs", f"R$ {v_ativos_total:,.2f}")
+        m2.metric("Renda Passiva", f"R$ {renda_total:,.2f}")
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
 
         st.line_chart(df_grafico)
 
+# ==================== ABA 2: MANUAL DIDÁTICO (RESTAURADO) ====================
 with tab_manual:
-    st.header("📖 Manual Rockefeller")
+    st.header("📖 Guia de Operação - Sistema Rockefeller")
+    st.write("Siga este manual para interpretar os dados e gerir sua riqueza com precisão matemática.")
+
+    st.markdown("### 1. Radar de Ativos (Inteligência de Preço)")
     st.markdown("""
     <div class="manual-section">
-    <b>Como usar o Gestor Inteligente:</b><br>
-    1. Selecione o ativo no campo de busca.<br>
-    2. Insira a <b>Quantidade de Cotas</b> que você tem.<br>
-    3. Insira o <b>Total Investido</b> (a soma de todas as vezes que você comprou esse ativo).<br>
-    4. O sistema calculará seu <b>Preço Médio (PM)</b> e seu <b>Lucro Real</b> automaticamente, comparando com o valor de mercado agora.
+    Este módulo identifica distorções de preço no curto prazo.
+    <ul>
+        <li><b>Preço (R$):</b> Valor atual de mercado. Ativos em dólar são convertidos automaticamente.</li>
+        <li><b>Média 30d:</b> O ponto de equilíbrio. Representa o valor comum do ativo no último mês.</li>
+        <li><b>Status 🔥 BARATO:</b> O preço está abaixo da média. Indica uma <b>oportunidade de compra</b> técnica.</li>
+        <li><b>Status 💎 CARO:</b> O preço está acima da média. Indica que o mercado pode estar supervalorizado.</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 2. Raio-X de Volatilidade (Análise de Risco)")
+    st.markdown("""
+    <div class="manual-section">
+    Entenda a "agressividade" do mercado nos últimos 30 dias.
+    <ul>
+        <li><b>Dias A/B (Alta/Baixa):</b> Se houver muito mais 🔴 do que 🟢, o ativo está em forte tendência de queda.</li>
+        <li><b>Pico e Fundo:</b> Mostra a variação máxima positiva e negativa registrada no período.</li>
+        <li><b>Alerta 🚨 RECORDE:</b> Indica que o preço hoje atingiu a <b>mínima absoluta</b> dos últimos 30 dias.</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 3. Gestor de Carteira Dinâmica (Seu Patrimônio)")
+    st.markdown("""
+    <div class="manual-section">
+    Onde você controla seus investimentos reais.
+    <ul>
+        <li><b>Habilitação:</b> Use o seletor para ativar apenas o que você possui para focar no seu patrimônio.</li>
+        <li><b>Investimento Total:</b> Insira o valor total em reais que você usou para comprar suas cotas.</li>
+        <li><b>PM (Auto):</b> O sistema calcula seu custo médio automaticamente dividindo o valor investido pela quantidade.</li>
+        <li><b>Lucro/Prejuízo:</b> Comparação exata entre o seu custo e o valor de mercado agora.</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 4. Patrimônio Global")
+    st.markdown("""
+    <div class="manual-section">
+    A visão final do seu império financeiro.
+    <ul>
+        <li><b>Ouro e Minerais:</b> Insira bens físicos. O sistema precifica o Ouro automaticamente pela cotação do mercado.</li>
+        <li><b>Patrimônio Total:</b> A soma de TUDO: Saldo na Corretora + Valor das Ações + Ouro + Bens Físicos.</li>
+    </ul>
     </div>
     """, unsafe_allow_html=True)
