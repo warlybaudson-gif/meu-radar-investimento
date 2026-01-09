@@ -206,4 +206,30 @@ with tab_manual:
     
     with st.expander("🛰️ ITEM 1: Radar de Ativos Estratégicos", expanded=True):
         st.markdown("""
-        **Objetivo:** Identificar o melhor momento de compra baseado
+        **Objetivo:** Identificar o melhor momento de compra baseado na média de 30 dias.
+        - **Preço (R$):** Valor de mercado em tempo real (com centavos).
+        - **Média 30d:** O equilíbrio do preço no último mês.
+        - **Status 🔥 BARATO:** Quando o preço está abaixo da média, sinalizando oportunidade.
+        - **Status 💎 CARO:** Quando o preço está acima da média, sinalizando cautela.
+        """)
+
+    with st.expander("📊 ITEM 2: Raio-X de Volatilidade"):
+        st.markdown("""
+        **Objetivo:** Analisar a saúde e o risco da oscilação do ativo.
+        - **Dias A/B:** Relação de dias de alta (verde) e baixa (vermelho).
+        - **Alerta 🚨 RECORDE:** Aciona quando o preço atinge a mínima do mês, o que pode indicar um ponto de reversão.
+        """)
+
+    with st.expander("🧮 ITEM 3: Gestor de Carteira Dinâmica"):
+        st.markdown("""
+        **Objetivo:** Controle pessoal de lucro e dividendos.
+        - **Habilitação:** Ative apenas os ativos que você possui para focar no seu patrimônio.
+        - **Lucro/Prejuízo:** Calculado automaticamente comparando seu Preço Médio (PM) com a cotação atual.
+        - **Renda/Mês:** Projeção mensal de dividendos com base no histórico real do ativo.
+        """)
+
+    with st.expander("💰 ITEM 4: Patrimônio Global"):
+        st.markdown("""
+        **Objetivo:** Visão total da sua riqueza.
+        - Consolida o valor das suas ações, saldo em conta e ativos físicos (como ouro e minerais raras) em um único indicador de Patrimônio Total.
+        """)
