@@ -2,22 +2,14 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 
-# 1. CONFIGURAÇÕES E ESTILO REFORÇADO PARA MOBILE
+# 1. CONFIGURAÇÕES E ESTILO (ESTRUTURA PRESERVADA)
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #ffffff; }
-    
-    /* Forçar cor branca e evitar quebras de texto */
     .stMarkdown, .stTable, td, th, p, label { color: #ffffff !important; white-space: nowrap !important; }
-    
-    .mobile-table-container { 
-        overflow-x: auto; 
-        width: 100%; 
-        -webkit-overflow-scrolling: touch;
-    }
-
+    .mobile-table-container { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
     .rockefeller-table {
         width: 100%;
         border-collapse: collapse;
@@ -37,20 +29,13 @@ st.markdown("""
         text-align: center !important;
         border-bottom: 1px solid #222;
     }
-    
     div[data-testid="stMetric"] { 
         background-color: #111111; 
         border: 1px solid #333333; 
         border-radius: 8px;
         text-align: center;
     }
-    
-    /* Estilo para o Manual Didático */
-    .manual-section {
-        border-left: 3px solid #58a6ff;
-        padding-left: 15px;
-        margin-bottom: 25px;
-    }
+    .manual-section { border-left: 3px solid #58a6ff; padding-left: 15px; margin-bottom: 25px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -58,19 +43,22 @@ st.title("💰 IA Rockefeller")
 
 tab_painel, tab_manual = st.tabs(["📊 Painel de Controle", "📖 Manual de Instruções"])
 
-# --- PROCESSAMENTO DE DADOS ---
+# --- PROCESSAMENTO DE DADOS (CÂMBIO ATUALIZADO) ---
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
     "Nióbio": "NGLOY", "Grafeno": "FGPHF", "Câmbio USD/BRL": "USDBRL=X"
 }
-dados_radar = []
-dados_volatilidade = []
 
 try:
+    # Tenta buscar o câmbio real de 2026 via Yahoo Finance
     cambio_hoje = yf.Ticker("USDBRL=X").history(period="1d")['Close'].iloc[-1]
 except:
-    cambio_hoje = 5.40 
+    # Valor de segurança (Fallback) atualizado para a realidade atual
+    cambio_hoje = 6.18 
+
+dados_radar = []
+dados_volatilidade = []
 
 for nome_exibicao, t in tickers_map.items():
     try:
@@ -79,6 +67,7 @@ for nome_exibicao, t in tickers_map.items():
         if not hist_30d.empty:
             p_atual = hist_30d['Close'].iloc[-1]
             
+            # Conversões Internacionais com o novo câmbio
             if t in ["NVDA", "GC=F", "NGLOY", "FGPHF"]:
                 if t == "GC=F": p_atual = (p_atual / 31.1035) * cambio_hoje
                 else: p_atual = p_atual * cambio_hoje
@@ -197,6 +186,7 @@ with tab_painel:
             g_joias = st.number_input("Ouro (g):", value=0.0)
             v_minerais = st.number_input("Bens (R$):", value=0.0)
 
+        # Cálculo do ouro e patrimônio com o dólar atualizado
         p_ouro = float(df_radar[df_radar['Ativo'] == "Jóias (Ouro)"]['Preço'].values[0])
         patri_global = v_ativos_total + v_na_xp + (g_joias * p_ouro) + v_minerais
         
@@ -206,23 +196,21 @@ with tab_painel:
         m3.metric("PATRIMÔNIO", f"R$ {patri_global:,.2f}")
 
         st.markdown("---")
-        st.subheader("📈 Comparativo de Performance")
+        st.subheader("📈 Comparativo de Performance (Ativos Selecionados)")
         st.line_chart(df_grafico)
 
 # ==================== ABA 2: MANUAL DIDÁTICO ====================
 with tab_manual:
     st.header("📖 Guia de Operação - Sistema Rockefeller")
-    st.write("Siga este manual para interpretar os dados e gerir sua riqueza com precisão matemática.")
-
+    
     st.markdown("### 1. Radar de Ativos (Inteligência de Preço)")
     st.markdown("""
     <div class="manual-section">
-    Este módulo identifica distorções de preço no curto prazo.
+    Identifica distorções entre o preço de agora e a média mensal.
     <ul>
-        <li><b>Preço (R$):</b> Valor atual de mercado. Ativos em dólar são convertidos automaticamente.</li>
-        <li><b>Média 30d:</b> O ponto de equilíbrio. Representa o valor comum do ativo no último mês.</li>
-        <li><b>Status 🔥 BARATO:</b> O preço está abaixo da média. Indica uma <b>oportunidade de compra</b> técnica.</li>
-        <li><b>Status 💎 CARO:</b> O preço está acima da média. Indica que o mercado pode estar supervalorizado.</li>
+        <li><b>Preço:</b> Valor atual (centavos incluídos). Conversão automática via dólar 2026.</li>
+        <li><b>Média 30d:</b> O "preço justo" do último mês.</li>
+        <li><b>🔥 BARATO / 💎 CARO:</b> Indica se o ativo está em zona de compra ou cautela.</li>
     </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -230,37 +218,23 @@ with tab_manual:
     st.markdown("### 2. Raio-X de Volatilidade (Análise de Risco)")
     st.markdown("""
     <div class="manual-section">
-    Entenda a "agressividade" do mercado nos últimos 30 dias.
+    Monitora a saúde da tendência.
     <ul>
-        <li><b>Dias A/B (Alta/Baixa):</b> Se houver muito mais 🔴 do que 🟢, o ativo está em forte tendência de queda.</li>
-        <li><b>Pico e Fundo:</b> Mostra a variação máxima positiva e negativa. Útil para saber o quanto o ativo costuma oscilar.</li>
-        <li><b>Alerta 🚨 RECORDE:</b> O sinal mais importante. Indica que o preço hoje atingiu a <b>mínima absoluta</b> dos últimos 30 dias. É o sinal clássico de "fundo de mercado".</li>
+        <li><b>Dias A/B:</b> Relação de dias verdes e vermelhos no mês.</li>
+        <li><b>Pico/Fundo:</b> A oscilação máxima registrada no período.</li>
+        <li><b>Alerta 🚨 RECORDE:</b> Indica que o preço bateu a mínima dos últimos 30 dias. É o sinal de alerta máximo para fundos.</li>
     </ul>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("### 3. Gestor de Carteira Dinâmica (Seu Patrimônio)")
+    st.markdown("### 3. Gestor de Carteira e Gráficos")
     st.markdown("""
     <div class="manual-section">
-    Onde você controla seus investimentos reais.
+    Gestão pessoal e visual.
     <ul>
-        <li><b>Habilitação:</b> Use o seletor para ativar apenas o que você possui. Isso limpa sua visão e ajusta os gráficos.</li>
-        <li><b>PM (Preço Médio):</b> Insira quanto você pagou por cada cota. O sistema usa isso para calcular seu <b>Lucro Real</b>.</li>
-        <li><b>Renda/Mês:</b> Uma estimativa de quanto você recebe de "salário" por mês em dividendos, baseada no histórico real de pagamentos.</li>
+        <li><b>Habilitação:</b> Ative apenas os ativos que você possui para ver o lucro e a renda somada.</li>
+        <li><b>Gráfico Dinâmico:</b> Gera automaticamente as linhas de performance para todos os ativos que você marcou na lista acima.</li>
+        <li><b>Patrimônio Global:</b> Consolida saldo bancário, ações e bens físicos como Ouro e Nióbio.</li>
     </ul>
     </div>
     """, unsafe_allow_html=True)
-
-    st.markdown("### 4. Patrimônio Global e Gráficos")
-    st.markdown("""
-    <div class="manual-section">
-    A visão final do seu império financeiro.
-    <ul>
-        <li><b>Gráfico Dinâmico:</b> Mostra a linha de tendência de todos os ativos que você habilitou. Se você tem 3 ações, verá 3 linhas para comparar qual performa melhor.</li>
-        <li><b>Ouro e Minerais:</b> Diferente da bolsa, aqui você insere bens físicos. O sistema precifica o Ouro automaticamente pela cotação internacional.</li>
-        <li><b>Patrimônio Total:</b> A soma de TUDO: Dinheiro na XP + Ações + Ouro + Minerais.</li>
-    </ul>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.info("💡 **Dica Estratégica:** Quando o Radar mostrar 'BARATO' e o Raio-X mostrar 'RECORDE', você está diante do melhor cenário de compra possível.")
