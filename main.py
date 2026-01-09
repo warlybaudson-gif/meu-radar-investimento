@@ -2,23 +2,46 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 
-# 1. CONFIGURAÇÕES E ESTILO PARA CELULAR E DESKTOP
+# 1. CONFIGURAÇÕES E ESTILO REFORÇADO PARA ALINHAMENTO
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #ffffff; }
     
-    /* Evita quebra de texto e permite rolagem lateral em celulares */
-    .stTable { overflow-x: auto !important; display: block !important; }
-    table { width: 100% !important; border-collapse: collapse !important; white-space: nowrap !important; }
+    /* Forçar alinhamento central e evitar quebra de linha */
+    .styled-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 25px 0;
+        font-size: 0.9em;
+        font-family: sans-serif;
+        min-width: 400px;
+    }
+    .styled-table th {
+        background-color: #1a1a1a;
+        color: #58a6ff;
+        text-align: center !important;
+        padding: 12px 15px;
+        border-bottom: 2px solid #333;
+    }
+    .styled-table td {
+        padding: 12px 15px;
+        text-align: center !important;
+        border-bottom: 1px solid #222;
+    }
     
-    th { background-color: #1a1a1a !important; color: #58a6ff !important; text-align: left !important; padding: 12px !important; }
-    td { background-color: #000000 !important; color: #ffffff !important; padding: 10px !important; border-bottom: 1px solid #222 !important; }
-    
-    /* Ajuste de métricas para não quebrar em colunas pequenas */
-    div[data-testid="stMetricValue"] { font-size: 1.2rem !important; }
-    div[data-testid="stMetric"] { background-color: #111111; border: 1px solid #333333; padding: 10px; border-radius: 8px; }
+    /* Scroll horizontal para celular */
+    .table-container {
+        overflow-x: auto;
+    }
+
+    div[data-testid="stMetric"] { 
+        background-color: #111111; 
+        border: 1px solid #333333; 
+        border-radius: 8px; 
+        text-align: center;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -61,18 +84,18 @@ for t in tickers:
             dados_radar.append({
                 "Ativo": nome_display, 
                 "Ticker_Raw": t,
-                "Preço": int(p_atual), # Retirado casas decimais conforme solicitado
-                "Média 30d": round(m_30, 2), 
+                "Preço (R$)": f"{int(p_atual)}", 
+                "Média 30d": f"{m_30:.2f}", 
                 "Status": "🔥 BARATO" if p_atual < m_30 else "💎 CARO", 
                 "Ação": "✅ COMPRAR" if p_atual < m_30 else "⚠️ ESPERAR",
-                "Div_Ano": round(divs, 2)
+                "Div_Ano": divs
             })
             
             dados_volatilidade.append({
                 "Ativo": nome_display, 
                 "Dias A/B": f"🟢{(variacoes > 0).sum()} / 🔴{(variacoes < 0).sum()}", 
-                "Pico": f"+{round(variacoes.max(), 2)}%", 
-                "Fundo": f"{round(variacoes.min(), 2)}%", 
+                "Pico": f"+{variacoes.max():.2f}%", 
+                "Fundo": f"{variacoes.min():.2f}%", 
                 "Alerta": "🚨 RECORDE" if var_hoje <= (variacoes.min() * 0.98) and var_hoje < 0 else "Normal"
             })
     except: continue
@@ -83,8 +106,27 @@ df_vol = pd.DataFrame(dados_volatilidade)
 # ==================== ABA 1: PAINEL DE CONTROLE ====================
 with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
-    # Exibe preço sem decimais e média com 2
-    st.table(df_radar[["Ativo", "Preço", "Média 30d", "Status", "Ação"]])
+    
+    # Renderização manual da tabela HTML para garantir alinhamento perfeito
+    html_radar = f"""
+    <div class="table-container">
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Ativo</th>
+                    <th>Preço (R$)</th>
+                    <th>Média 30d</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {"".join([f"<tr><td>{row['Ativo']}</td><td>{row['Preço (R$)']}</td><td>{row['Média 30d']}</td><td>{row['Status']}</td><td>{row['Ação']}</td></tr>" for _, row in df_radar.iterrows()])}
+            </tbody>
+        </table>
+    </div>
+    """
+    st.markdown(html_radar, unsafe_allow_html=True)
 
     c_term, c_vol = st.columns([1, 1.5])
     with c_term:
@@ -107,7 +149,7 @@ with tab_painel:
         v_ativos_total = 0
         
         st.write("📝 **Configure suas posições:**")
-        cols = st.columns(2) # Reduzido para 2 colunas para melhor visualização mobile
+        cols = st.columns(2)
         
         for i, nome in enumerate(ativos_selecionados):
             with cols[i % 2]:
@@ -116,14 +158,15 @@ with tab_painel:
                 pm = st.number_input(f"PM (R$):", min_value=0.0, value=0.0, step=0.01, key=f"p_{nome}")
                 
                 info = df_radar[df_radar["Ativo"] == nome].iloc[0]
-                v_agora = qtd * info["Preço"]
-                lucro = (info["Preço"] - pm) * qtd if pm > 0 else 0
+                p_val = float(info["Preço (R$)"])
+                v_agora = qtd * p_val
+                lucro = (p_val - pm) * qtd if pm > 0 else 0
                 r_mes = (info["Div_Ano"] * qtd) / 12
                 
                 lista_c.append({
-                    "Ativo": nome, "Qtd": qtd, "Custo Total": round(pm*qtd, 2), 
-                    "Valor Atual": round(v_agora, 2), "Lucro/Prej": round(lucro, 2), 
-                    "Renda/Mês": round(r_mes, 2)
+                    "Ativo": nome, "Qtd": qtd, "Custo Total": f"{pm*qtd:.2f}", 
+                    "Valor Atual": f"{v_agora:.2f}", "Lucro/Prej": f"{lucro:.2f}", 
+                    "Renda/Mês": f"{r_mes:.2f}"
                 })
                 renda_total += r_mes
                 v_ativos_total += v_agora
@@ -138,7 +181,7 @@ with tab_painel:
             g_joias = st.number_input("Ouro (g):", value=0.0)
             v_minerais = st.number_input("Bens (R$):", value=0.0)
 
-        p_ouro = df_radar[df_radar['Ativo'] == "Jóias (Ouro)"]['Preço'].values[0]
+        p_ouro = float(df_radar[df_radar['Ativo'] == "Jóias (Ouro)"]['Preço (R$)'].values[0])
         patri_global = v_ativos_total + v_na_xp + (g_joias * p_ouro) + v_minerais
         
         m1, m2, m3 = st.columns(3)
@@ -146,10 +189,9 @@ with tab_painel:
         m2.metric("Renda/Mês", f"R$ {renda_total:,.2f}")
         m3.metric("PATRIMÔNIO", f"R$ {patri_global:,.2f}")
 
-    # RETORNO DO GRÁFICO
     st.markdown("---")
     st.subheader("📈 Tendência Visual")
-    sel_graf = st.selectbox("Selecione o ativo para análise de 30 dias:", df_radar['Ativo'].unique())
+    sel_graf = st.selectbox("Selecione o ativo para análise:", df_radar['Ativo'].unique())
     t_raw = df_radar[df_radar['Ativo'] == sel_graf]['Ticker_Raw'].values[0]
     st.line_chart(yf.Ticker(t_raw).history(period="30d")['Close'])
 
@@ -157,31 +199,33 @@ with tab_painel:
 with tab_manual:
     st.header("📖 Guia Estratégico IA Rockefeller")
     
-    st.subheader("1. Radar de Ativos")
+    st.subheader("1. Radar de Ativos (Inteligência de Preço)")
     st.markdown("""
-    **O que é:** Monitoramento em tempo real de preços vs médias históricas.
-    - **Preço:** Valor atual de mercado (arredondado para facilitar a leitura rápida).
-    - **Média 30d:** Referência de preço justo do último mês.
-    - **Status 🔥 BARATO:** O preço está abaixo da média. Oportunidade de compra.
+    O Radar analisa se o preço atual está em uma zona de oportunidade ou de risco.
+    - **Preço (R$):** Valor atual de mercado convertido e arredondado para leitura rápida.
+    - **Média 30d:** O "preço justo" médio do último mês. Se o preço está abaixo da média, o status é **BARATO**.
+    - **Ação:** Sugestão matemática baseada no desvio da média.
     """)
 
-    st.subheader("2. Raio-X de Volatilidade")
+    st.subheader("2. Raio-X de Volatilidade (Comportamento)")
     st.markdown("""
-    **O que é:** Análise do risco e oscilação do ativo.
-    - **Dias A/B:** Relação de dias que o ativo subiu (verde) versus dias que caiu (vermelho).
-    - **Alerta 🚨 RECORDE:** Indica que o ativo está no preço mais baixo do mês, sinalizando um possível fundo.
+    Analisa como o ativo se moveu nos últimos 30 dias de pregão.
+    - **Dias A/B (Alta/Baixa):** Contagem de quantos dias o ativo fechou no positivo versus negativo.
+    - **Pico e Fundo:** A oscilação máxima para cima e para baixo no período.
+    - **Alerta 🚨 RECORDE:** Dispara se o preço atual for a mínima do mês, indicando um possível ponto de exaustão de venda.
     """)
 
-    st.subheader("3. Gestor de Carteira Dinâmica")
+    st.subheader("3. Gestor de Carteira Dinâmica (Controle de Ativos)")
     st.markdown("""
-    **O que é:** Sua ferramenta de controle pessoal de lucro e renda.
-    - **Multiselect:** Escolha apenas os ativos que você possui para habilitar o preenchimento.
-    - **PM (Preço Médio):** Insira o valor pago para o sistema calcular seu lucro real.
-    - **Renda/Mês:** Projeção de quanto você receberá em dividendos com base na sua quantidade.
+    Este módulo permite gerenciar o que você já comprou.
+    - **Ativação:** Use a lista de seleção para exibir apenas os ativos que você possui.
+    - **Cálculo de Lucro:** Ao inserir seu Preço Médio (PM), o sistema compara com o mercado e mostra seu lucro ou prejuízo nominal.
+    - **Renda Passiva:** Calcula o dividendo mensal esperado baseado no histórico de 12 meses do ativo.
     """)
 
-    st.subheader("4. Patrimônio Global")
+    st.subheader("4. Patrimônio Global (Consolidação de Riqueza)")
     st.markdown("""
-    **O que é:** Consolidação de toda sua riqueza.
-    - Soma investimentos, saldo em corretora e bens físicos (ouro/minerais) em um único valor final.
+    Une todos os seus pilares financeiros em um único número final.
+    - **Bolsa:** Valor total das suas ações e criptos hoje.
+    - **Saldo e Bens:** Soma o dinheiro parado na corretora e ativos físicos (como ouro em gramas) para calcular sua riqueza real total.
     """)
