@@ -1,12 +1,10 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
-import numpy as np
 
-# 1. CONFIGURAÇÕES DE IDENTIDADE E LAYOUT
+# 1. CONFIGURAÇÕES E IDENTIDADE VISUAL
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
-# 2. ESTILO TOTAL BLACK
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #ffffff; }
@@ -21,11 +19,11 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("💰 IA Rockefeller - Sistema Unificado")
+st.title("💰 IA Rockefeller - O Sistema Completo")
 
-tab_painel, tab_manual = st.tabs(["📊 Painel & Carteira", "📖 Manual de Instruções"])
+tab_painel, tab_manual = st.tabs(["📊 Painel de Controle", "📖 Manual de Instruções"])
 
-# --- PROCESSAMENTO DE DADOS (Consolidação Yahoo Finance) ---
+# --- PROCESSAMENTO DE DADOS (Radar, Volatilidade e Ativos Estratégicos) ---
 tickers = ["PETR4.SA", "VALE3.SA", "MXRF11.SA", "BTC-USD", "NVDA", "GC=F", "NGLOY", "FGPHF", "USDBRL=X"]
 dados_radar = []
 dados_volatilidade = []
@@ -42,7 +40,7 @@ for t in tickers:
         if not hist_30d.empty:
             p_atual = hist_30d['Close'].iloc[-1]
             
-            # Conversão para BRL
+            # Conversões Internacionais
             if t in ["NVDA", "GC=F", "NGLOY", "FGPHF"]:
                 if t == "GC=F": p_atual = (p_atual / 31.1035) * cambio_hoje
                 else: p_atual = p_atual * cambio_hoje
@@ -51,7 +49,7 @@ for t in tickers:
             if t in ["NVDA", "NGLOY", "FGPHF"]: m_30 *= cambio_hoje
             if t == "GC=F": m_30 = (m_30 / 31.1035) * cambio_hoje
 
-            nomes_dict = {"GC=F": "Jóias (Ouro)", "NVDA": "Nvidia (IA)", "NGLOY": "Nióbio", "FGPHF": "Grafeno"}
+            nomes_dict = {"GC=F": "Jóias (Ouro)", "NVDA": "Nvidia", "NGLOY": "Nióbio", "FGPHF": "Grafeno"}
             nome_display = nomes_dict.get(t, t)
             
             divs = ativo.dividends.last("365D").sum() if t not in ["BTC-USD", "GC=F", "USDBRL=X", "FGPHF"] else 0.0
@@ -59,122 +57,99 @@ for t in tickers:
             var_hoje = variacoes.iloc[-1] if not pd.isna(variacoes.iloc[-1]) else 0.0
 
             dados_radar.append({
-                "Ativo": nome_display, "Ticker": t, "Preço": p_atual, "Média 30d": m_30, 
-                "Div_Ano": divs, "Status": "🔥 BARATO" if p_atual < m_30 else "💎 CARO",
-                "Ação": "✅ COMPRAR" if p_atual < m_30 else "⚠️ ESPERAR"
+                "Ativo": nome_display, "Ticker_Raw": t, "Preço": p_atual, "Média 30d": m_30, 
+                "Status": "🔥 BARATO" if p_atual < m_30 else "💎 CARO", "Ação": "✅ COMPRAR" if p_atual < m_30 else "⚠️ ESPERAR",
+                "Div_Ano": divs, "Var_Hoje": var_hoje
             })
             
             dados_volatilidade.append({
-                "Ativo": nome_display,
-                "Dias 🟢/🔴": f"🟢{(variacoes > 0).sum()} / 🔴{(variacoes < 0).sum()}",
-                "Pico": f"+{variacoes.max():.2f}%",
-                "Fundo": f"{variacoes.min():.2f}%",
-                "Alerta": "🚨 RECORDE" if var_hoje <= (variacoes.min() * 0.98) and var_hoje < 0 else "Estável"
+                "Ativo": nome_display, "Dias A/B": f"🟢{(variacoes > 0).sum()}/🔴{(variacoes < 0).sum()}", 
+                "Pico": f"+{variacoes.max():.2f}%", "Fundo": f"{variacoes.min():.2f}%", 
+                "Alerta": "🚨 RECORDE" if var_hoje <= (variacoes.min() * 0.98) and var_hoje < 0 else ""
             })
     except: continue
 
 df_radar = pd.DataFrame(dados_radar)
 df_vol = pd.DataFrame(dados_volatilidade)
 
-# ==================== ABA 1: PAINEL & CARTEIRA ====================
+# ==================== ABA 1: PAINEL DE CONTROLE ====================
 with tab_painel:
     # 1. RADAR E TERMÔMETRO
-    c_radar, c_term = st.columns([2, 1])
-    with c_radar:
-        st.subheader("🛰️ Radar de Ativos")
-        st.table(df_radar[["Ativo", "Preço", "Status", "Ação"]].head(8))
+    st.subheader("🛰️ Radar de Ativos Estratégicos")
+    st.table(df_radar[["Ativo", "Preço", "Média 30d", "Status", "Ação"]])
+
+    c_term, c_vol = st.columns([1, 1.5])
     with c_term:
-        st.subheader("🌡️ Ganância")
+        st.subheader("🌡️ Termômetro de Ganância")
         caros = len(df_radar[df_radar['Status'] == "💎 CARO"])
         score = (caros / len(df_radar)) * 100 if len(df_radar) > 0 else 0
-        st.metric("Índice", f"{score:.0f}%")
         st.progress(score / 100)
+        st.write(f"Índice: **{score:.0f}%**")
+    with c_vol:
+        st.subheader("📊 Raio-X de Volatilidade")
+        st.table(df_vol)
 
-    # 2. RAIO-X DE VOLATILIDADE
     st.markdown("---")
-    st.subheader("📊 Raio-X de Volatilidade (30 Dias)")
-    st.table(df_vol)
 
-    # 3. GESTOR DE CARTEIRA DINÂMICA (A Mudança Solicitada)
-    st.markdown("---")
-    st.subheader("🧮 Minha Carteira Personalizada")
-    
-    ativos_selecionados = st.multiselect(
-        "Habilite os ativos que você possui para gerenciar quantidades e lucros:",
-        options=df_radar["Ativo"].unique(),
-        default=["PETR4.SA"]
-    )
+    # 2. CARTEIRA DINÂMICA (A Mudança Solicitada)
+    st.subheader("🧮 Gestor de Carteira Multiativos")
+    ativos_escolhidos = st.multiselect("Habilite os ativos da sua carteira:", options=df_radar["Ativo"].unique(), default=["PETR4.SA"])
 
-    if ativos_selecionados:
-        lista_final = []
-        v_total_investido = 0
-        r_total_mes = 0
-
-        # Inputs em colunas para não ocupar muito espaço vertical
-        st.write("📝 **Preencha seus dados de posse:**")
-        cols = st.columns(4)
-        for i, nome in enumerate(ativos_selecionados):
-            with cols[i % 4]:
+    if ativos_escolhidos:
+        lista_c = []
+        renda_total = 0
+        valor_ativos_total = 0
+        
+        st.write("📝 **Configure seus ativos selecionados:**")
+        cols = st.columns(len(ativos_escolhidos) if len(ativos_escolhidos) <= 3 else 3)
+        
+        for i, nome in enumerate(ativos_escolhidos):
+            with cols[i % 3]:
                 st.markdown(f"**{nome}**")
                 qtd = st.number_input(f"Qtd:", min_value=0, value=1, key=f"q_{nome}")
                 pm = st.number_input(f"PM (R$):", min_value=0.0, value=0.0, key=f"p_{nome}")
                 
-                # Busca dados do radar
-                row = df_radar[df_radar["Ativo"] == nome].iloc[0]
-                v_atual = qtd * row["Preço"]
-                lucro = (row["Preço"] - pm) * qtd if pm > 0 else 0
-                r_mes = (row["Div_Ano"] * qtd) / 12
+                info = df_radar[df_radar["Ativo"] == nome].iloc[0]
+                v_agora = qtd * info["Preço"]
+                lucro = (info["Preço"] - pm) * qtd if pm > 0 else 0
+                r_mes = (info["Div_Ano"] * qtd) / 12
                 
-                lista_final.append({
-                    "Ativo": nome, "Quantidade": qtd, "Preço Médio": f"R$ {pm:.2f}",
-                    "Valor Atual": f"R$ {v_atual:.2f}", "Lucro/Prej": f"R$ {lucro:.2f}",
-                    "Renda Mensal": f"R$ {r_mes:.2f}", "Recomendação": row["Ação"]
-                })
-                v_total_investido += v_atual
-                r_total_mes += r_mes
+                lista_c.append({"Ativo": nome, "Qtd": qtd, "Custo": f"R$ {pm*qtd:.2f}", "Valor Atual": f"R$ {v_agora:.2f}", "Lucro": f"R$ {lucro:.2f}", "Renda/Mês": f"R$ {r_mes:.2f}"})
+                renda_total += r_mes
+                valor_ativos_total += v_agora
 
-        st.markdown("### 📋 Resumo Consolidado da Carteira")
-        st.table(pd.DataFrame(lista_final))
+        st.table(pd.DataFrame(lista_c))
 
-        # 4. PATRIMÔNIO GLOBAL (BARRA LATERAL + MÉTRICAS)
+        # 3. PATRIMÔNIO REAL E CÁLCULO DE TROCO (Gestor XP)
         st.markdown("---")
+        st.subheader("💰 Consolidação de Patrimônio Real")
         with st.sidebar:
-            st.header("⚙️ Patrimônio Extra")
-            saldo_cash = st.number_input("Dinheiro em conta (XP):", value=0.0)
-            valor_ouro_fisico = st.number_input("Valor Ouro Físico (R$):", value=0.0)
-            valor_minerais = st.number_input("Minerais Raros (R$):", value=0.0)
-        
-        patri_global = v_total_investido + saldo_cash + valor_ouro_fisico + valor_minerais
+            st.header("⚙️ Ajustes de Saldo")
+            v_na_xp = st.number_input("Saldo em Dinheiro na XP (R$):", value=50.0)
+            g_joias = st.number_input("Jóias (Gramas Ouro):", value=0.0)
+            v_minerais = st.number_input("Outros Minerais (R$):", value=0.0)
+
+        p_ouro = df_radar[df_radar['Ativo'] == "Jóias (Ouro)"]['Preço'].values[0]
+        patri_global = valor_ativos_total + v_na_xp + (g_joias * p_ouro) + v_minerais
         
         m1, m2, m3 = st.columns(3)
-        m1.metric("Investido em Bolsa", f"R$ {v_total_investido:.2f}")
-        m2.metric("Salário em Dividendos", f"R$ {r_total_mes:.2f}")
-        m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:.2f}")
-    else:
-        st.info("Selecione os ativos acima para abrir a tabela de gestão.")
+        m1.metric("Total em Ativos", f"R$ {valor_ativos_total:.2f}")
+        m2.metric("Renda Passiva Mensal", f"R$ {renda_total:.2f}")
+        m3.metric("PATRIMÔNIO GLOBAL", f"R$ {patri_global:.2f}")
+
+    # 4. GRÁFICOS DE TENDÊNCIA
+    st.markdown("---")
+    st.subheader("📈 Tendência e Análise Visual")
+    sel_graf = st.selectbox("Ver gráfico de:", df_radar['Ativo'].unique())
+    t_raw = df_radar[df_radar['Ativo'] == sel_graf]['Ticker_Raw'].values[0]
+    st.line_chart(yf.Ticker(t_raw).history(period="30d")['Close'])
 
 # ==================== ABA 2: MANUAL COMPLETO ====================
 with tab_manual:
-    st.header("📖 Manual do Usuário - IA Rockefeller V5")
-    
-    with st.expander("🛰️ 1. O Radar e Ativos Estratégicos", expanded=True):
-        st.markdown("""
-        O Radar vigia ativos tradicionais e de alta tecnologia.
-        - **Nióbio & Grafeno:** Rastreados via mineradoras globais (NGLOY e FGPHF).
-        - **Conversão:** Ativos em dólar são convertidos para Real (BRL) instantaneamente.
-        - **Status 🔥 BARATO:** O preço está abaixo da média de 30 dias.
-        """)
-
-    with st.expander("🧮 2. Carteira Multiativos Dinâmica"):
-        st.markdown("""
-        Esta é a sua principal ferramenta de controle.
-        - **Habilitação:** Use o seletor para ativar apenas os ativos que você comprou.
-        - **Lucro/Prejuízo:** Calculado comparando seu Preço Médio (PM) com a cotação atual do Yahoo Finance.
-        - **Renda Mensal:** Projeção baseada nos últimos 12 meses de dividendos reais de cada empresa.
-        """)
-
-    with st.expander("📊 3. Raio-X e Volatilidade"):
-        st.markdown("""
-        - **Dias 🟢/🔴:** Mostra se o ativo está em tendência de subida ou descida consistente no mês.
-        - **Alerta 🚨 RECORDE:** Dispara se o preço hoje cair abaixo do ponto mais baixo dos últimos 30 dias. É o sinal de 'fundo histórico' mensal.
-        """)
+    st.header("📖 Manual Rockefeller V6")
+    with st.expander("🛰️ 1. Radar e Novos Ativos", expanded=True):
+        st.markdown("Monitora Nvidia, Ouro, Nióbio e Grafeno com conversão automática para Real.")
+    with st.expander("🧮 2. Carteira Multiativos"):
+        st.markdown("Use o Multiselect para habilitar ativos. Insira Qtd e PM para ver seu lucro real e renda passiva somada.")
+    with st.expander("📊 3. Volatilidade e Alertas"):
+        st.markdown("🚨 RECORDE avisa se o preço caiu abaixo da mínima dos últimos 30 dias.")
