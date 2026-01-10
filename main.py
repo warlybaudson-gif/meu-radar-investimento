@@ -69,7 +69,7 @@ for nome_exibicao, t in tickers_map.items():
 
 df_radar = pd.DataFrame(dados_radar)
 
-# --- INICIALIZAÇÃO DO ESTADO DA CARTEIRA ---
+# INICIALIZAÇÃO DO ESTADO
 if 'carteira' not in st.session_state:
     st.session_state.carteira = {}
 
@@ -119,17 +119,14 @@ with tab_painel:
                 
                 total_investido_acumulado += investido
                 v_ativos_atualizado += v_agora
-                
-                # Salva dados para a aba Huli
                 st.session_state.carteira[nome] = {"atual": v_agora}
 
                 lista_c.append({"Ativo": nome, "Qtd": qtd, "PM": f"{pm_calc:.2f}", "Total": f"{v_agora:.2f}", "Lucro": f"{lucro:.2f}"})
                 df_grafico[nome] = yf.Ticker(info["Ticker_Raw"]).history(period="30d")['Close']
 
         troco_real = capital_xp - total_investido_acumulado
-
         html_c = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-            <thead><tr><th>Ativo</th><th>Qtd</th><th>PM</th><th>Total Atual</th><th>Lucro/Prej</th></tr></thead>
+            <thead><tr><th>Ativo</th><th>Qtd</th><th>PM</th><th>Valor Atual</th><th>Lucro/Prej</th></tr></thead>
             <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>R$ {r['PM']}</td><td>R$ {r['Total']}</td><td>{r['Lucro']}</td></tr>" for r in lista_c])}</tbody>
         </table></div>"""
         st.markdown(html_c, unsafe_allow_html=True)
@@ -153,14 +150,13 @@ with tab_painel:
 # ==================== ABA 2: ESTRATÉGIA TIO HULI ====================
 with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
-    st.write("Mantenha o equilíbrio da sua carteira para comprar na baixa e segurar na alta.")
     
+    # 1. Rebalanceamento
     valor_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, value=0.0, step=100.0)
 
     if not ativos_sel:
         st.warning("Selecione seus ativos na aba 'Painel de Controle' primeiro.")
     else:
-        st.markdown("---")
         st.subheader("📊 1. Defina sua Alocação Ideal (%)")
         metas = {}
         cols_metas = st.columns(len(ativos_sel))
@@ -170,9 +166,8 @@ with tab_huli:
         
         soma_metas = sum(metas.values())
         if soma_metas != 100:
-            st.error(f"⚠️ A soma das metas é {soma_metas}%. Ajuste para fechar em 100%.")
+            st.error(f"⚠️ A soma é {soma_metas}%. Ajuste para 100%.")
         else:
-            st.markdown("---")
             st.subheader("📈 2. Plano de Rebalanceamento")
             plano_huli = []
             for nome in ativos_sel:
@@ -186,19 +181,29 @@ with tab_huli:
                 plano_huli.append({"Ativo": nome, "Atual (%)": f"{porc_atual:.1f}%", "Meta (%)": f"{meta_porc:.0f}%", "Decisão": decisao, "Quanto Comprar": sugestao_valor})
             st.table(pd.DataFrame(plano_huli))
 
+            # --- CALCULADORA DE SOBREVIVÊNCIA (NOVO BLOCO UNIDO) ---
+            st.markdown("---")
+            st.subheader("🏁 Meta de Sobrevivência (Liberdade Financeira)")
+            col_meta1, col_meta2 = st.columns(2)
+            with col_meta1:
+                custo_mensal = st.number_input("Custo de vida mensal desejado (R$):", min_value=0.0, value=3000.0)
+                renda_mensal_estimada = st.slider("Rendimento mensal da carteira (%)", 0.1, 2.0, 0.8)
+            
+            pat_necessario = custo_mensal / (renda_mensal_estimada / 100)
+            progresso = (patri_global / pat_necessario) * 100 if pat_necessario > 0 else 0
+            
+            with col_meta2:
+                st.write("Patrimônio necessário para parar de trabalhar:")
+                st.metric("Alvo Final", f"R$ {pat_necessario:,.2f}")
+            
+            st.write(f"Você já percorreu **{progresso:.1f}%** do caminho!")
+            st.progress(min(progresso/100, 1.0))
+            st.info(f"Sua carteira hoje geraria aprox. **R$ {(patri_global * (renda_mensal_estimada/100)):,.2f}** de renda passiva.")
+
 # ==================== ABA 3: MANUAL DIDÁTICO ====================
 with tab_manual:
     st.header("📖 Guia de Operação - Sistema Rockefeller")
-    st.markdown("### 1. Radar de Ativos (Inteligência de Preço)")
-    st.markdown("""<div class="manual-section">Identifica distorções de preço no curto prazo. 
-    <b>🔥 BARATO:</b> Preço abaixo da média. <b>💎 CARO:</b> Preço acima da média.</div>""", unsafe_allow_html=True)
-    
-    st.markdown("### 2. Raio-X de Volatilidade (Análise de Risco)")
-    st.markdown("""<div class="manual-section"><b>🚨 RECORDE:</b> Indica que o preço hoje atingiu a mínima absoluta dos últimos 30 dias.</div>""", unsafe_allow_html=True)
-
-    st.markdown("### 3. Gestor de Carteira Dinâmica")
-    st.markdown("""<div class="manual-section"><b>Capital Total XP:</b> Todo dinheiro que você tem na conta. 
-    <b>Troco:</b> O que sobra após subtrair o valor investido nas ações.</div>""", unsafe_allow_html=True)
-
-    st.markdown("### 4. Estratégia Huli")
-    st.markdown("""<div class="manual-section"><b>Rebalanceamento:</b> O sistema indica qual ativo você deve comprar para voltar à sua porcentagem meta ideal.</div>""", unsafe_allow_html=True)
+    st.markdown("### 1. Radar e Volatilidade")
+    st.markdown("""<div class="manual-section">Use o Radar para ver o que está barato e o Raio-X para identificar recordes de queda.</div>""", unsafe_allow_html=True)
+    st.markdown("### 2. Estratégia e Sobrevivência")
+    st.markdown("""<div class="manual-section">No plano Huli, foque em ativos '✅ APORTAR' e monitore sua porcentagem de liberdade financeira.</div>""", unsafe_allow_html=True)
