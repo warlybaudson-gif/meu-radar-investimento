@@ -148,7 +148,7 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
         
-        # ==================== ABA: ESTRATÉGIA TIO HULI ====================
+     # ==================== ABA: ESTRATÉGIA TIO HULI ====================
 with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
     st.write("Não compre o que você quer, compre o que sua carteira precisa para manter o equilíbrio.")
@@ -259,4 +259,5 @@ with tab_manual:
     </ul>
     </div>
     """, unsafe_allow_html=True)
+
 
