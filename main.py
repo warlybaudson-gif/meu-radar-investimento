@@ -103,4 +103,63 @@ with tab_painel:
         cols = st.columns(2)
         for i, nome in enumerate(ativos_sel):
             with cols[i % 2]:
-                st.markdown(
+                st.markdown(f"**{nome}**")
+                qtd = st.number_input(f"Qtd Cotas:", min_value=0, value=0, key=f"q_{nome}")
+                investido = st.number_input(f"Total Investido R$:", min_value=0.0, value=0.0, step=10.0, key=f"i_{nome}")
+                
+                info = df_radar[df_radar["Ativo"] == nome].iloc[0]
+                p_atual = info["V_Cru"]
+                
+                pm_calc = investido / qtd if qtd > 0 else 0.0
+                v_atualizado = qtd * p_atual
+                lucro_prej = v_atualizado - investido
+                
+                lista_c.append({
+                    "Ativo": nome, "Qtd": qtd, "PM": f"{pm_calc:.2f}",
+                    "Total Atual": f"{v_atualizado:.2f}", "Lucro": f"{lucro_prej:.2f}"
+                })
+                renda_total += (info["Div_Ano"] * qtd) / 12
+                v_ativos_total += v_atualizado
+                df_grafico[nome] = yf.Ticker(info["Ticker_Raw"]).history(period="30d")['Close']
+
+        # Tabela Resumo
+        html_c = f"""<div class="mobile-table-container"><table class="rockefeller-table">
+            <thead><tr><th>Ativo</th><th>Qtd</th><th>PM</th><th>Valor Atual</th><th>Lucro/Prej</th></tr></thead>
+            <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>R$ {r['PM']}</td><td>R$ {r['Total Atual']}</td><td>{r['Lucro']}</td></tr>" for r in lista_c])}</tbody>
+        </table></div>"""
+        st.markdown(html_c, unsafe_allow_html=True)
+
+        # 💰 PATRIMÔNIO GLOBAL (COM TROCO)
+        st.markdown("---")
+        st.subheader("💰 Patrimônio Global")
+        with st.sidebar:
+            st.header("⚙️ Ajustes e Troco")
+            v_na_xp = st.number_input("Saldo em Conta/Troco (R$):", value=0.0) # <--- O TROCO VOLTOU AQUI
+            g_joias = st.number_input("Ouro Físico (g):", value=0.0)
+            v_minerais = st.number_input("Outros Bens (R$):", value=0.0)
+
+        p_ouro = float(df_radar[df_radar['Ativo'] == "Jóias (Ouro)"]['V_Cru'].values[0])
+        patri_global = v_ativos_total + v_na_xp + (g_joias * p_ouro) + v_minerais
+        
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Bolsa/Criptos", f"R$ {v_ativos_total:,.2f}")
+        m2.metric("Saldo/Troco", f"R$ {v_na_xp:,.2f}") # <--- EXIBIÇÃO DO TROCO
+        m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
+
+        st.line_chart(df_grafico)
+
+# ==================== ABA 2: MANUAL DIDÁTICO ====================
+with tab_manual:
+    st.header("📖 Guia de Operação - Sistema Rockefeller")
+    
+    st.markdown("### 1. Radar de Ativos (Inteligência de Preço)")
+    st.markdown("""<div class="manual-section">Analisa o preço atual vs a média de 30 dias. <b>Barato:</b> Oportunidade. <b>Caro:</b> Cuidado.</div>""", unsafe_allow_html=True)
+
+    st.markdown("### 2. Raio-X de Volatilidade (Análise de Risco)")
+    st.markdown("""<div class="manual-section">Monitora recordes de preço. O alerta <b>🚨 RECORDE</b> avisa se o preço hoje é a mínima do mês.</div>""", unsafe_allow_html=True)
+
+    st.markdown("### 3. Gestor de Carteira Dinâmica")
+    st.markdown("""<div class="manual-section">Insira o <b>Total Investido</b> e a <b>Quantidade</b>. O sistema calcula o <b>PM</b> e o seu Lucro Real automaticamente.</div>""", unsafe_allow_html=True)
+
+    st.markdown("### 4. Patrimônio Global")
+    st.markdown("""<div class="manual-section">Soma tudo: Suas ações, seu <b>Troco (Saldo em conta)</b> e seus bens físicos (Ouro).</div>""", unsafe_allow_html=True)
