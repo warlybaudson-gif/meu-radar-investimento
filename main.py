@@ -2,7 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 
-# 1. CONFIGURAÇÕES E ESTILO REFORÇADO
+# 1. CONFIGURAÇÕES E ESTILO REFORÇADO (PRESERVADO)
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
 st.markdown("""
@@ -26,7 +26,7 @@ st.title("💰 IA Rockefeller")
 # CRIAÇÃO DAS TRÊS ABAS
 tab_painel, tab_huli, tab_manual = st.tabs(["📊 Painel de Controle", "🎯 Estratégia Huli", "📖 Manual de Instruções"])
 
-# --- PROCESSAMENTO DE DADOS (TEMPO REAL) ---
+# --- PROCESSAMENTO DE DADOS (PRESERVADO) ---
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
@@ -69,11 +69,10 @@ for nome_exibicao, t in tickers_map.items():
 
 df_radar = pd.DataFrame(dados_radar)
 
-# INICIALIZAÇÃO DO ESTADO
 if 'carteira' not in st.session_state:
     st.session_state.carteira = {}
 
-# ==================== ABA 1: PAINEL DE CONTROLE ====================
+# ==================== ABA 1: PAINEL DE CONTROLE (PRESERVADO) ====================
 with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
     html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
@@ -147,11 +146,9 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
 
-# ==================== ABA 2: ESTRATÉGIA TIO HULI ====================
+# ==================== ABA 2: ESTRATÉGIA TIO HULI (REBALANCEAMENTO + SOBREVIVÊNCIA) ====================
 with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
-    
-    # 1. Rebalanceamento
     valor_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, value=0.0, step=100.0)
 
     if not ativos_sel:
@@ -181,29 +178,49 @@ with tab_huli:
                 plano_huli.append({"Ativo": nome, "Atual (%)": f"{porc_atual:.1f}%", "Meta (%)": f"{meta_porc:.0f}%", "Decisão": decisao, "Quanto Comprar": sugestao_valor})
             st.table(pd.DataFrame(plano_huli))
 
-            # --- CALCULADORA DE SOBREVIVÊNCIA (NOVO BLOCO UNIDO) ---
+            # ADICIONADO: CALCULO DE SOBREVIVÊNCIA
             st.markdown("---")
             st.subheader("🏁 Meta de Sobrevivência (Liberdade Financeira)")
             col_meta1, col_meta2 = st.columns(2)
             with col_meta1:
-                custo_mensal = st.number_input("Custo de vida mensal desejado (R$):", min_value=0.0, value=3000.0)
+                custo_mensal = st.number_input("Qual o seu custo de vida mensal (R$)?", min_value=0.0, value=3000.0)
                 renda_mensal_estimada = st.slider("Rendimento mensal da carteira (%)", 0.1, 2.0, 0.8)
-            
             pat_necessario = custo_mensal / (renda_mensal_estimada / 100)
             progresso = (patri_global / pat_necessario) * 100 if pat_necessario > 0 else 0
-            
             with col_meta2:
-                st.write("Patrimônio necessário para parar de trabalhar:")
-                st.metric("Alvo Final", f"R$ {pat_necessario:,.2f}")
-            
-            st.write(f"Você já percorreu **{progresso:.1f}%** do caminho!")
+                st.metric("Patrimônio Alvo", f"R$ {pat_necessario:,.2f}")
+                st.write(f"Você já percorreu **{progresso:.1f}%** do caminho!")
             st.progress(min(progresso/100, 1.0))
-            st.info(f"Sua carteira hoje geraria aprox. **R$ {(patri_global * (renda_mensal_estimada/100)):,.2f}** de renda passiva.")
 
-# ==================== ABA 3: MANUAL DIDÁTICO ====================
+# ==================== ABA 3: MANUAL DIDÁTICO (ORIGINAL DETALHADO RESTAURADO) ====================
 with tab_manual:
     st.header("📖 Guia de Operação - Sistema Rockefeller")
-    st.markdown("### 1. Radar e Volatilidade")
-    st.markdown("""<div class="manual-section">Use o Radar para ver o que está barato e o Raio-X para identificar recordes de queda.</div>""", unsafe_allow_html=True)
-    st.markdown("### 2. Estratégia e Sobrevivência")
-    st.markdown("""<div class="manual-section">No plano Huli, foque em ativos '✅ APORTAR' e monitore sua porcentagem de liberdade financeira.</div>""", unsafe_allow_html=True)
+    st.write("Siga este manual para interpretar os dados e gerir sua riqueza com precisão matemática.")
+
+    st.markdown("### 1. Radar de Ativos (Inteligência de Preço)")
+    st.markdown("""<div class="manual-section">Este módulo identifica distorções de preço no curto prazo.
+    <ul>
+        <li><b>Preço (R$):</b> Valor atual de mercado. Ativos em dólar são convertidos automaticamente.</li>
+        <li><b>Média 30d:</b> O ponto de equilíbrio. Representa o valor comum do ativo no último mês.</li>
+        <li><b>Status 🔥 BARATO:</b> O preço está abaixo da média. Indica uma oportunidade de compra técnica.</li>
+        <li><b>Ação ✅ COMPRAR:</b> Sugestão baseada na queda do preço abaixo da média histórica recente.</li>
+    </ul></div>""", unsafe_allow_html=True)
+
+    st.markdown("### 2. Raio-X de Volatilidade (Análise de Risco)")
+    st.markdown("""<div class="manual-section">Entenda a agressividade do mercado nos últimos 30 dias.
+    <ul>
+        <li><b>Dias A/B:</b> Placar de dias que o ativo subiu (🟢) versus caiu (🔴).</li>
+        <li><b>Pico e Fundo:</b> A variação máxima e mínima registrada no mês.</li>
+        <li><b>Alerta 🚨 RECORDE:</b> Indica que o preço hoje atingiu a mínima absoluta dos últimos 30 dias.</li>
+    </ul></div>""", unsafe_allow_html=True)
+
+    st.markdown("### 3. Gestor de Carteira Dinâmica")
+    st.markdown("""<div class="manual-section">Onde você controla seus investimentos reais.
+    <ul>
+        <li><b>Capital Total XP:</b> O dinheiro total que você enviou para a corretora.</li>
+        <li><b>Troco:</b> O sistema subtrai o investido do capital total para mostrar seu saldo livre.</li>
+        <li><b>PM (Auto):</b> O sistema calcula seu custo médio automaticamente.</li>
+    </ul></div>""", unsafe_allow_html=True)
+
+    st.markdown("### 4. Estratégia Huli")
+    st.markdown("""<div class="manual-section">Consolida sua riqueza total e define seu progresso rumo à liberdade financeira.</div>""", unsafe_allow_html=True)
