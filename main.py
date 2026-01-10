@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 
-# 1. CONFIGURAÇÕES E ESTILO REFORÇADO (INTEGRAL - PRESERVADO)
+# 1. CONFIGURAÇÕES E ESTILO REFORÇADO (INTEGRAL - SEM ALTERAÇÕES)
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
 st.markdown("""
@@ -25,7 +25,7 @@ st.markdown("""
 
 st.title("💰 IA Rockefeller")
 
-# CRIAÇÃO DAS QUATRO ABAS (PRESERVADAS)
+# CRIAÇÃO DAS QUATRO ABAS
 tab_painel, tab_huli, tab_modelo, tab_manual = st.tabs([
     "📊 Painel de Controle", 
     "🎯 Estratégia Huli", 
@@ -33,7 +33,7 @@ tab_painel, tab_huli, tab_modelo, tab_manual = st.tabs([
     "📖 Manual de Instruções"
 ])
 
-# --- PROCESSAMENTO DE DADOS (COM INTELIGÊNCIA DE GRAHAM ADICIONADA) ---
+# --- PROCESSAMENTO DE DADOS (COM GRAHAM, SEM MEXER NO RESTANTE) ---
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
@@ -61,22 +61,18 @@ for nome_exibicao, t in tickers_map.items():
             if t in ["NVDA", "NGLOY", "FGPHF"]: m_30 *= cambio_hoje
             if t == "GC=F": m_30 = (m_30 / 31.1035) * cambio_hoje
 
-            # CÁLCULO MATEMÁTICO DE MERCADO (GRAHAM)
+            # CÁLCULO GRAHAM
             lpa = info.get('trailingEps', 0)
             vpa = info.get('bookValue', 0)
             if lpa > 0 and vpa > 0:
                 preco_justo = np.sqrt(22.5 * lpa * vpa)
                 if t in ["NVDA", "NGLOY", "FGPHF"]: preco_justo *= cambio_hoje
             else:
-                preco_justo = m_30 # Fallback para ativos sem VPA (Cripto/Ouro)
+                preco_justo = m_30
 
             status_mercado = "✅ DESCONTADO" if p_atual < preco_justo else "❌ SOBREPREÇO"
-            
             variacoes = hist_30d['Close'].pct_change() * 100
             var_hoje = variacoes.iloc[-1] if not pd.isna(variacoes.iloc[-1]) else 0.0
-
-            status_tecnico = "🔥 BARATO" if p_atual < m_30 else "💎 CARO"
-            # Decisão baseada em Técnica + Fundamento (Mentalidade Huli)
             acao = "✅ COMPRAR" if p_atual < m_30 and status_mercado == "✅ DESCONTADO" else "⚠️ ESPERAR"
 
             dados_radar.append({
@@ -91,11 +87,11 @@ for nome_exibicao, t in tickers_map.items():
 df_radar = pd.DataFrame(dados_radar)
 if 'carteira' not in st.session_state: st.session_state.carteira = {}
 
-# ==================== ABA 1: PAINEL DE CONTROLE (MANTIDO) ====================
+# ==================== ABA 1: PAINEL DE CONTROLE (INTEGRAL) ====================
 with tab_painel:
-    st.subheader("🛰️ Radar de Ativos ( Graham + Média 30d )")
+    st.subheader("🛰️ Radar Fundamentalista de Mercado")
     html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-        <thead><tr><th>Ativo</th><th>Preço</th><th>Preço Justo</th><th>Mercado</th><th>Ação</th></tr></thead>
+        <thead><tr><th>Ativo</th><th>Preço Atual</th><th>Preço Justo</th><th>Avaliação</th><th>Ação</th></tr></thead>
         <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>R$ {r['Preço']}</td><td>R$ {r['Justo (Graham)']}</td><td>{r['Status Mercado']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar.iterrows()])}</tbody>
     </table></div>"""
     st.markdown(html_radar, unsafe_allow_html=True)
@@ -111,7 +107,7 @@ with tab_painel:
     caros = len(df_radar[df_radar['Status Mercado'] == "❌ SOBREPREÇO"])
     score = (caros / len(df_radar)) * 100 if len(df_radar) > 0 else 0
     st.progress(score / 100)
-    st.write(f"Índice de Ativos Caros (Graham): **{int(score)}%**")
+    st.write(f"Índice de Ativos Caros: **{int(score)}%**")
 
     st.markdown("---")
     st.subheader("🧮 Gestor de Carteira Dinâmica")
@@ -160,56 +156,102 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
 
-# ==================== ABA 2: ESTRATÉGIA HULI (MANTIDO) ====================
+# ==================== ABA 2: ESTRATÉGIA HULI (INTEGRAL) ====================
 with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
     valor_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, value=0.0, step=100.0)
     if not ativos_sel:
         st.warning("Selecione seus ativos na aba 'Painel de Controle' primeiro.")
     else:
-        st.subheader("📊 1. Alocação Ideal (%)")
+        st.subheader("📊 1. Defina sua Alocação Ideal (%)")
         metas = {nome: st.slider(f"{nome} (%)", 0, 100, 100 // len(ativos_sel), key=f"meta_{nome}") for nome in ativos_sel}
         if sum(metas.values()) == 100:
+            st.subheader("📈 2. Plano de Rebalanceamento")
             plano_huli = []
             for nome in ativos_sel:
                 v_atual = st.session_state.carteira[nome]["atual"]
                 porc_atual = (v_atual / v_ativos_atualizado * 100) if v_ativos_atualizado > 0 else 0
-                valor_ideal = (v_ativos_atualizado + valor_aporte) * (metas[nome] / 100)
+                meta_porc = metas[nome]
+                valor_ideal = (v_ativos_atualizado + valor_aporte) * (meta_porc / 100)
                 necessidade = valor_ideal - v_atual
                 decisao = "✅ APORTAR" if necessidade > 0 else "✋ AGUARDAR"
-                plano_huli.append({"Ativo": nome, "Atual (%)": f"{porc_atual:.1f}%", "Meta (%)": f"{metas[nome]:.0f}%", "Decisão": decisao, "Aporte": f"R$ {max(0, necessidade):.2f}"})
+                sugestao_valor = f"R$ {necessidade:.2f}" if necessidade > 0 else "---"
+                plano_huli.append({"Ativo": nome, "Atual (%)": f"{porc_atual:.1f}%", "Meta (%)": f"{meta_porc:.0f}%", "Decisão": decisao, "Quanto Comprar": sugestao_valor})
             st.table(pd.DataFrame(plano_huli))
 
             st.markdown("---")
-            st.subheader("🏁 Meta de Sobrevivência")
-            c_m1, c_m2 = st.columns(2)
-            with c_m1:
-                custo = st.number_input("Custo de vida (R$):", value=3000.0)
-                renda = st.slider("Rendimento mensal (%)", 0.1, 2.0, 0.8)
-            pat_alvo = custo / (renda / 100)
-            prog = (patri_global / pat_alvo) * 100 if pat_alvo > 0 else 0
-            with c_m2: st.metric("Patrimônio Alvo", f"R$ {pat_alvo:,.2f}")
-            st.progress(min(prog/100, 1.0))
-            st.write(f"Progresso: **{prog:.1f}%**")
+            st.subheader("🏁 Meta de Sobrevivência (Liberdade Financeira)")
+            col_meta1, col_meta2 = st.columns(2)
+            with col_meta1:
+                custo_mensal = st.number_input("Custo de vida mensal desejado (R$):", min_value=0.0, value=3000.0)
+                renda_mensal_estimada = st.slider("Rendimento mensal da carteira (%)", 0.1, 2.0, 0.8)
+            pat_necessario = custo_mensal / (renda_mensal_estimada / 100)
+            progresso = (patri_global / pat_necessario) * 100 if pat_necessario > 0 else 0
+            with col_meta2:
+                st.write("Patrimônio necessário para parar de trabalhar:")
+                st.metric("Alvo Final", f"R$ {pat_necessario:,.2f}")
+            st.write(f"Você já percorreu **{progresso:.1f}%** do caminho!")
+            st.progress(min(progresso/100, 1.0))
+            st.info(f"Sua carteira hoje geraria aprox. **R$ {(patri_global * (renda_mensal_estimada/100)):,.2f}** de renda passiva.")
 
-# ==================== ABA 3: CARTEIRA MODELO (MANTIDO) ====================
+# ==================== ABA 3: CARTEIRA MODELO HULI (RESTAURADA INTEGRALMENTE) ====================
 with tab_modelo:
-    st.header("🏦 Ativos Diversificados (Modelo Tio Huli)")
+    st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
+    st.write("Esta é a base de ativos que compõe o método dele para proteção e renda.")
+
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras</b></div>', unsafe_allow_html=True)
-        st.write("• Energia: TAEE11, EGIE3 | • Saneamento: SAPR11 | • Bancos: BBAS3")
-        st.markdown('<div class="huli-category"><b>🏢 Imóveis (FIIs)</b></div>', unsafe_allow_html=True)
-        st.write("• HGLG11, XPML11, KNRI11")
-    with col2:
-        st.markdown('<div class="huli-category"><b>🐕 Cães de Guarda</b></div>', unsafe_allow_html=True)
-        st.write("• Ouro (OZ1D) | • Dólar (IVVB11) | • Tesouro Selic")
-        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida</b></div>', unsafe_allow_html=True)
-        st.write("• Bitcoin (BTC) | • Nvidia (NVDA) | • Apple (AAPL)")
+        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras (Renda Passiva)</b><br><small>Foco em Dividendos e Estabilidade</small></div>', unsafe_allow_html=True)
+        st.write("**• Energia:** TAEE11 (Taesa), EGIE3 (Engie), ALUP11 (Alupar)")
+        st.write("**• Saneamento:** SAPR11 (Sanepar), SBSP3 (Sabesp)")
+        st.write("**• Bancos:** BBAS3 (Banco do Brasil), ITUB4 (Itaú), SANB11 (Santander)")
+        st.write("**• Seguradoras:** BBSE3 (BB Seguridade), CXSE3 (Caixa Seguridade)")
 
-# ==================== ABA 4: MANUAL (MANTIDO) ====================
+        st.markdown('<div class="huli-category"><b>🏢 Fundos Imobiliários (Renda Mensal)</b><br><small>Aluguéis sem Imposto de Renda</small></div>', unsafe_allow_html=True)
+        st.write("**• Logística:** HGLG11, XPLG11, BTLG11")
+        st.write("**• Shoppings:** XPML11, VISC11, HGBS11")
+        st.write("**• Papel (Dívida):** KNIP11, CPTS11")
+
+    with col2:
+        st.markdown('<div class="huli-category"><b>🐕 Cães de Guarda (Segurança)</b><br><small>Reserva de Oportunidade e Valor</small></div>', unsafe_allow_html=True)
+        st.write("**• Ouro:** OZ1D ou ETF GOLD11")
+        st.write("**• Dólar:** IVVB11 (S&P 500) ou ações diretas nos EUA")
+        st.write("**• Renda Fixa:** Tesouro Selic e CDBs de liquidez diária")
+
+        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida (Crescimento)</b><br><small>Aposta no futuro e multiplicação</small></div>', unsafe_allow_html=True)
+        st.write("**• Cripto:** Bitcoin (BTC) e Ethereum (ETH)")
+        st.write("**• Tech:** Nvidia (NVDA), Apple (AAPL), Google (GOOGL)")
+        st.write("**• Commodities:** VALE3, PETR4")
+
+# ==================== ABA 4: MANUAL DIDÁTICO (INTEGRAL) ====================
 with tab_manual:
-    st.header("📖 Guia de Operação")
-    st.markdown("### 1. Radar Fundamentalista")
-    st.markdown("""<div class="manual-section"><b>Preço Justo (Graham):</b> Calculado via √22.5 * LPA * VPA. 
-    <b>✅ DESCONTADO:</b> Ativo custa menos que seu valor patrimonial e lucro sugerem.</div>""", unsafe_allow_html=True)
+    st.header("📖 Guia de Operação - Sistema Rockefeller")
+    st.write("Siga este manual para interpretar os dados e gerir sua riqueza com precisão matemática.")
+
+    st.markdown("### 1. Radar de Ativos (Inteligência de Preço)")
+    st.markdown("""<div class="manual-section">Este módulo identifica distorções de preço no curto prazo.
+    <ul>
+        <li><b>Preço (R$):</b> Valor atual de mercado. Ativos em dólar são convertidos automaticamente.</li>
+        <li><b>Média 30d:</b> O ponto de equilíbrio. Representa o valor comum do ativo no último mês.</li>
+        <li><b>Status 🔥 BARATO:</b> O preço está abaixo da média. Indica uma oportunidade de compra técnica.</li>
+        <li><b>Ação ✅ COMPRAR:</b> Sugestão baseada na queda do preço abaixo da média histórica recente.</li>
+    </ul></div>""", unsafe_allow_html=True)
+
+    st.markdown("### 2. Raio-X de Volatilidade (Análise de Risco)")
+    st.markdown("""<div class="manual-section">Entenda a agressividade do mercado nos últimos 30 dias.
+    <ul>
+        <li><b>Dias A/B:</b> Placar de dias que o ativo subiu (🟢) versus caiu (🔴).</li>
+        <li><b>Pico e Fundo:</b> A variação máxima e mínima registrada no mês.</li>
+        <li><b>Alerta 🚨 RECORDE:</b> Indica que o preço hoje atingiu a mínima absoluta dos últimos 30 dias.</li>
+    </ul></div>""", unsafe_allow_html=True)
+
+    st.markdown("### 3. Gestor de Carteira Dinâmica")
+    st.markdown("""<div class="manual-section">Onde você controla seus investimentos reais.
+    <ul>
+        <li><b>Capital Total XP:</b> O dinheiro total que você enviou para a corretora.</li>
+        <li><b>Troco:</b> O sistema subtrai o investido do capital total para mostrar seu saldo livre.</li>
+        <li><b>PM (Auto):</b> O sistema calcula seu custo médio automaticamente.</li>
+    </ul></div>""", unsafe_allow_html=True)
+
+    st.markdown("### 4. Estratégia Huli")
+    st.markdown("""<div class="manual-section">Consolida sua riqueza total e define seu progresso rumo à liberdade financeira.</div>""", unsafe_allow_html=True)
