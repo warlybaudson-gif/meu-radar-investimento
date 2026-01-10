@@ -148,6 +148,58 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
 
+# ==================== ABA 2: MANUAL DIDÁTICO (ORIGINAL COMPLETO) ====================
 with tab_manual:
-    st.header("📖 Guia de Operação")
-    st.markdown("""<div class="manual-section"><b>1. Radar:</b> Indica se o ativo está Barato/Caro e sugere Compra/Espera.<br><b>2. Volatilidade:</b> Recordes de queda e dias de alta.<br><b>3. Gestor:</b> Subtrai o total investido do seu capital na XP para mostrar o Troco.<br><b>4. Patrimônio:</b> Consolidado geral da sua riqueza.</div>""", unsafe_allow_html=True)
+    st.header("📖 Guia de Operação - Sistema Rockefeller")
+    st.write("Siga este manual para interpretar os dados e gerir sua riqueza com precisão matemática.")
+
+    st.markdown("### 1. Radar de Ativos (Inteligência de Preço)")
+    st.markdown("""
+    <div class="manual-section">
+    Este módulo identifica distorções de preço no curto prazo.
+    <ul>
+        <li><b>Preço (R$):</b> Valor atual de mercado. Ativos em dólar são convertidos automaticamente para a moeda local.</li>
+        <li><b>Média 30d:</b> O ponto de equilíbrio. Representa o valor médio do ativo no último mês.</li>
+        <li><b>Status 🔥 BARATO:</b> O preço atual está abaixo da média. Indica uma <b>oportunidade de compra</b> técnica.</li>
+        <li><b>Status 💎 CARO:</b> O preço está acima da média. Indica que o mercado pode estar supervalorizado no momento.</li>
+        <li><b>Ação ✅ COMPRAR:</b> Sugestão automática quando o preço cai abaixo da média histórica recente.</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 2. Raio-X de Volatilidade (Análise de Risco)")
+    st.markdown("""
+    <div class="manual-section">
+    Entenda a "agressividade" do mercado nos últimos 30 dias para evitar entrar em momentos de queda livre.
+    <ul>
+        <li><b>Dias A/B:</b> Placar de dias que o ativo fechou em alta (🟢) versus dias que fechou em baixa (🔴).</li>
+        <li><b>Pico e Fundo:</b> Mostra a variação máxima positiva e negativa registrada no período de 30 dias.</li>
+        <li><b>Alerta 🚨 RECORDE:</b> Indica que o preço hoje atingiu a <b>mínima absoluta</b> dos últimos 30 dias. É um sinal de possível reversão.</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 3. Gestor de Carteira Dinâmica")
+    st.markdown("""
+    <div class="manual-section">
+    Onde você controla seus investimentos reais e monitora seu saldo disponível.
+    <ul>
+        <li><b>Capital Total XP:</b> Digite aqui o montante total de dinheiro que você tem depositado na corretora.</li>
+        <li><b>Investimento Total:</b> Ao preencher quanto você gastou em cada ativo, o sistema subtrai esse valor do seu Capital Total para gerar o <b>Troco (Saldo Livre)</b>.</li>
+        <li><b>PM (Auto):</b> O Preço Médio é calculado automaticamente dividindo o seu investimento pela quantidade de cotas.</li>
+        <li><b>Lucro/Prejuízo:</b> Comparação exata entre o seu custo de aquisição e o valor que o mercado está pagando agora.</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 4. Patrimônio Global")
+    st.markdown("""
+    <div class="manual-section">
+    A visão final e consolidada do seu império financeiro.
+    <ul>
+        <li><b>Troco (Saldo XP):</b> O dinheiro que não está em ações e está parado, pronto para novas oportunidades.</li>
+        <li><b>Ouro e Bens:</b> Bens físicos que são somados ao seu valor líquido de mercado em tempo real.</li>
+        <li><b>Patrimônio Total:</b> A soma de TUDO: Saldo Livre + Valor Atualizado das Ações + Ouro + Outros Bens Físicos.</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
