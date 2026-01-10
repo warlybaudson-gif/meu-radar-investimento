@@ -147,6 +147,62 @@ with tab_painel:
         m2.metric("Troco (Saldo XP)", f"R$ {troco_real:,.2f}")
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
+        
+        # ==================== ABA: ESTRATÉGIA TIO HULI ====================
+with tab_huli:
+    st.header("🎯 Estratégia Tio Huli: Próximos Passos")
+    st.write("Não compre o que você quer, compre o que sua carteira precisa para manter o equilíbrio.")
+    
+    # Entrada do Aporte Mensal
+    valor_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, value=0.0, step=100.0)
+
+    if not ativos_sel:
+        st.warning("Selecione seus ativos na aba 'Painel de Controle' primeiro.")
+    else:
+        st.markdown("---")
+        st.subheader("📊 1. Defina sua Alocação Ideal (%)")
+        
+        metas = {}
+        cols_metas = st.columns(len(ativos_sel))
+        for i, nome in enumerate(ativos_sel):
+            with cols_metas[i]:
+                metas[nome] = st.slider(f"{nome} (%)", 0, 100, 100 // len(ativos_sel), key=f"meta_{nome}")
+        
+        soma_metas = sum(metas.values())
+        if soma_metas != 100:
+            st.error(f"⚠️ A soma das metas é {soma_metas}%. Ajuste para fechar em 100%.")
+        else:
+            st.markdown("---")
+            st.subheader("📈 2. Plano de Rebalanceamento")
+            
+            plano_huli = []
+            for nome in ativos_sel:
+                # Recupera o valor atualizado que calculamos na aba Painel
+                v_atual = st.session_state.carteira[nome]["atual"]
+                porc_atual = (v_atual / v_ativos_atualizado * 100) if v_ativos_atualizado > 0 else 0
+                meta_porc = metas[nome]
+                
+                # Cálculo da "fatia" ideal considerando o novo aporte
+                valor_ideal = (v_ativos_atualizado + valor_aporte) * (meta_porc / 100)
+                necessidade = valor_ideal - v_atual
+                
+                decisao = "✅ APORTAR" if necessidade > 0 else "✋ AGUARDAR"
+                sugestao_valor = f"R$ {necessidade:.2f}" if necessidade > 0 else "---"
+
+                plano_huli.append({
+                    "Ativo": nome,
+                    "Atual (%)": f"{porc_atual:.1f}%",
+                    "Meta (%)": f"{meta_porc:.0f}%",
+                    "Decisão": decisao,
+                    "Quanto Comprar": sugestao_valor
+                })
+            
+            st.table(pd.DataFrame(plano_huli))
+
+# ==================== ABA 2: MANUAL DIDÁTICO (COLOQUE ABAIXO DA HULI) ====================
+with tab_manual:
+    st.header("📖 Guia de Operação - Sistema Rockefeller")
+    # ... (Cole aqui aquele código longo do manual que te passei antes)
 
 # ==================== ABA 2: MANUAL DIDÁTICO (ORIGINAL COMPLETO) ====================
 with tab_manual:
@@ -203,3 +259,4 @@ with tab_manual:
     </ul>
     </div>
     """, unsafe_allow_html=True)
+
