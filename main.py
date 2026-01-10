@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 
-# 1. CONFIGURAÇÕES E ESTILO REFORÇADO (PRESERVADO)
+# 1. CONFIGURAÇÕES E ESTILO REFORÇADO (MANUTENÇÃO INTEGRAL)
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
 st.markdown("""
@@ -18,14 +18,14 @@ st.markdown("""
     .rockefeller-table th { background-color: #1a1a1a; color: #58a6ff !important; text-align: center !important; padding: 10px; border-bottom: 2px solid #333; }
     .rockefeller-table td { padding: 10px; text-align: center !important; border-bottom: 1px solid #222; }
     div[data-testid="stMetric"] { background-color: #111111; border: 1px solid #333333; border-radius: 8px; text-align: center; }
-    .manual-section { border-left: 3px solid #58a6ff; padding-left: 15px; margin-bottom: 25px; background-color: #0a0a0a; padding: 15px; }
+    .manual-section { border-left: 3px solid #58a6ff; padding-left: 15px; margin-bottom: 25px; }
     .huli-category { background-color: #1a1a1a; padding: 15px; border-radius: 5px; border-left: 4px solid #58a6ff; margin: 10px 0; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("💰 IA Rockefeller")
 
-# ABAS
+# CRIAÇÃO DAS ABAS
 tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_manual = st.tabs([
     "📊 Painel de Controle", 
     "🔍 Radar Carteira Modelo",
@@ -34,7 +34,7 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_manual = st.tabs([
     "📖 Manual de Instruções"
 ])
 
-# --- PROCESSAMENTO ---
+# --- PROCESSAMENTO DE DADOS ---
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
@@ -53,7 +53,7 @@ try:
 except:
     cambio_hoje = 5.40
 
-def calcular_tudo(lista):
+def calcular_dados(lista):
     res = []
     for nome_ex, t in lista.items():
         try:
@@ -82,11 +82,11 @@ def calcular_tudo(lista):
         except: continue
     return pd.DataFrame(res)
 
-df_radar = calcular_tudo(tickers_map)
-df_radar_modelo = calcular_tudo(modelo_huli_tickers)
+df_radar = calcular_dados(tickers_map)
+df_radar_modelo = calcular_dados(modelo_huli_tickers)
 if 'carteira' not in st.session_state: st.session_state.carteira = {}
 
-# ==================== ABA 1: PAINEL DE CONTROLE (CORRIGIDA) ====================
+# ==================== ABA 1: PAINEL DE CONTROLE (RESTAURADO INTEGRAL) ====================
 with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
     html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
@@ -112,7 +112,7 @@ with tab_painel:
     st.subheader("🧮 Gestor de Carteira Dinâmica")
     capital_xp = st.number_input("💰 Capital Total na Corretora XP (R$):", min_value=0.0, value=0.0, step=100.0)
     ativos_sel = st.multiselect("Habilite seus ativos:", df_radar["Ativo"].unique(), default=["PETR4.SA"])
-
+    
     total_investido_acumulado, v_ativos_atualizado = 0, 0
     lista_c, df_grafico = [], pd.DataFrame()
     if ativos_sel:
@@ -154,7 +154,7 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
 
-# --- (Restante das Abas Restauradas e Mantidas Conforme Instrução) ---
+# ==================== ABA 2: RADAR CARTEIRA MODELO (IGUAL AO PAINEL) ====================
 with tab_radar_modelo:
     st.subheader("🛰️ Radar de Ativos: Carteira Modelo Tio Huli")
     html_radar_m = f"""<div class="mobile-table-container"><table class="rockefeller-table">
@@ -168,12 +168,17 @@ with tab_radar_modelo:
         <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>🟢{r['Dias_A']}/🔴{r['Dias_B']}</td><td>+{r['Var_Max']:.2f}%</td><td>{r['Var_Min']:.2f}%</td><td>{'🚨 RECORDE' if r['Var_H'] <= (r['Var_Min']*0.98) and r['Var_H'] < 0 else 'Normal'}</td></tr>" for _, r in df_radar_modelo.iterrows()])}</tbody>
     </table></div>"""
     st.markdown(html_vol_m, unsafe_allow_html=True)
+    st.subheader("🌡️ Sentimento de Mercado (Modelo)")
+    caros_m = len(df_radar_modelo[df_radar_modelo['Status M'] == "❌ SOBREPREÇO"])
+    score_m = (caros_m / len(df_radar_modelo)) * 100 if len(df_radar_modelo) > 0 else 0
+    st.progress(score_m / 100); st.write(f"Índice de Sobrepreço: **{int(score_m)}%**")
 
+# ==================== ABA 3: ESTRATÉGIA HULI (RESTAURADA) ====================
 with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
     valor_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, value=0.0, step=100.0)
     if ativos_sel:
-        metas = {nome: st.slider(f"{nome} (%)", 0, 100, 100 // len(ativos_sel), key=f"meta_{nome}") for nome in ativos_sel}
+        metas = {nome: st.slider(f"{nome} (%)", 0, 100, 100 // len(ativos_sel), key=f"meta_h_{nome}") for nome in ativos_sel}
         if sum(metas.values()) == 100:
             plano = []
             for nome in ativos_sel:
@@ -193,20 +198,36 @@ with tab_huli:
             with col_m2: st.metric("Patrimônio Alvo", f"R$ {pat_nec:,.2f}")
             st.write(f"Você já percorreu **{prog:.1f}%** do caminho!"); st.progress(min(prog/100, 1.0))
 
+# ==================== ABA 4: CARTEIRA MODELO HULI (INTEGRAL ORIGINAL) ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
+    st.write("Esta é a base de ativos que compõe o método dele para proteção e renda.")
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras (Renda Passiva)</b></div>', unsafe_allow_html=True)
-        st.write("**• Energia:** TAEE11, EGIE3, ALUP11 | **• Saneamento:** SAPR11, SBSP3")
-        st.write("**• Bancos:** BBAS3, ITUB4, SANB11 | **• Seguradoras:** BBSE3, CXSE3")
+        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras (Renda Passiva)</b><br><small>Foco em Dividendos e Estabilidade</small></div>', unsafe_allow_html=True)
+        st.write("**• Energia:** TAEE11 (Taesa), EGIE3 (Engie), ALUP11 (Alupar)")
+        st.write("**• Saneamento:** SAPR11 (Sanepar), SBSP3 (Sabesp)")
+        st.write("**• Bancos:** BBAS3 (Banco do Brasil), ITUB4 (Itaú), SANB11 (Santander)")
+        st.write("**• Seguradoras:** BBSE3 (BB Seguridade), CXSE3 (Caixa Seguridade)")
+        st.markdown('<div class="huli-category"><b>🏢 Fundos Imobiliários (Renda Mensal)</b><br><small>Aluguéis sem Imposto de Renda</small></div>', unsafe_allow_html=True)
+        st.write("**• Logística:** HGLG11, XPLG11, BTLG11 | **• Shoppings:** XPML11, VISC11, HGBS11")
     with col2:
-        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida (Crescimento)</b></div>', unsafe_allow_html=True)
-        st.write("**• Cripto:** Bitcoin (BTC), Ethereum (ETH) | **• Tech:** Nvidia (NVDA), Apple (AAPL)")
+        st.markdown('<div class="huli-category"><b>🐕 Cães de Guarda (Segurança)</b><br><small>Reserva de Oportunidade e Valor</small></div>', unsafe_allow_html=True)
+        st.write("**• Ouro:** OZ1D ou ETF GOLD11 | **• Dólar:** IVVB11 (S&P 500)")
+        st.write("**• Renda Fixa:** Tesouro Selic e CDBs de liquidez diária")
+        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida (Crescimento)</b><br><small>Aposta no futuro e multiplicação</small></div>', unsafe_allow_html=True)
+        st.write("**• Cripto:** Bitcoin (BTC) e Ethereum (ETH) | **• Tech:** Nvidia (NVDA), Apple (AAPL)")
 
+# ==================== ABA 5: MANUAL DIDÁTICO (INTEGRAL ORIGINAL) ====================
 with tab_manual:
-    st.header("📖 Manual de Instruções IA Rockefeller")
-    st.markdown("### 🏛️ 1. Inteligência de Preço: Graham e Médias")
-    st.markdown("""<div class="manual-section">O sistema utiliza a <b>Fórmula de Graham (√22.5 * LPA * VPA)</b> para definir o valor real de uma ação. O sinal de compra aparece apenas quando o ativo está descontado perante seus fundamentos e abaixo da média mensal.</div>""", unsafe_allow_html=True)
-    st.markdown("### 🧮 2. Gestão de Patrimônio Global")
-    st.markdown("""<div class="manual-section">O <b>Patrimônio Total</b> soma suas ações, criptos, saldo livre na XP, ouro físico e outros bens. Use a barra lateral para atualizar seus ativos físicos e acompanhar seu progresso real rumo à liberdade financeira.</div>""", unsafe_allow_html=True)
+    st.header("📖 Guia de Operação - Sistema Rockefeller")
+    st.markdown("### 1. Radar de Ativos (Inteligência de Preço)")
+    st.markdown("""<div class="manual-section">Identifica distorções de preço no curto prazo.
+    <ul>
+        <li><b>🔥 BARATO:</b> Preço abaixo da média de 30 dias.</li>
+        <li><b>✅ COMPRAR:</b> Preço abaixo da média E abaixo do Preço Justo de Graham.</li>
+    </ul></div>""", unsafe_allow_html=True)
+    st.markdown("### 2. Raio-X de Volatilidade")
+    st.markdown("""<div class="manual-section"><b>🚨 RECORDE:</b> Indica que o preço hoje atingiu a mínima absoluta do mês.</div>""", unsafe_allow_html=True)
+    st.markdown("### 3. Gestor de Carteira")
+    st.markdown("""<div class="manual-section"><b>Troco:</b> O dinheiro livre na sua conta XP após as compras.</div>""", unsafe_allow_html=True)
