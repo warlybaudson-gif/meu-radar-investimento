@@ -2,7 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 
-# 1. CONFIGURAÇÕES E ESTILO
+# 1. CONFIGURAÇÕES E ESTILO REFORÇADO
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
 st.markdown("""
@@ -24,7 +24,7 @@ st.markdown("""
 st.title("💰 IA Rockefeller")
 tab_painel, tab_manual = st.tabs(["📊 Painel de Controle", "📖 Manual de Instruções"])
 
-# --- PROCESSAMENTO DE DADOS ---
+# --- PROCESSAMENTO DE DADOS (TEMPO REAL) ---
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
@@ -34,7 +34,7 @@ tickers_map = {
 try:
     cambio_hoje = yf.Ticker("USDBRL=X").history(period="1d")['Close'].iloc[-1]
 except:
-    cambio_hoje = 6.18 # Fallback realista para 2026
+    cambio_hoje = 5.37
 
 dados_radar = []
 for nome_exibicao, t in tickers_map.items():
@@ -103,66 +103,4 @@ with tab_painel:
         cols = st.columns(2)
         for i, nome in enumerate(ativos_sel):
             with cols[i % 2]:
-                st.markdown(f"**{nome}**")
-                qtd = st.number_input(f"Qtd Cotas:", min_value=0, value=0, key=f"q_{nome}")
-                investido = st.number_input(f"Total Investido R$:", min_value=0.0, value=0.0, step=10.0, key=f"i_{nome}")
-                
-                info = df_radar[df_radar["Ativo"] == nome].iloc[0]
-                p_atual = info["V_Cru"]
-                
-                pm_calc = investido / qtd if qtd > 0 else 0.0
-                v_atualizado = qtd * p_atual
-                lucro_prej = v_atualizado - investido
-                r_mes = (info["Div_Ano"] * qtd) / 12
-                
-                lista_c.append({
-                    "Ativo": nome, "Qtd": qtd, "PM": f"{pm_calc:.2f}",
-                    "Total Atual": f"{v_atualizado:.2f}", "Lucro": f"{lucro_prej:.2f}"
-                })
-                renda_total += r_mes
-                v_ativos_total += v_atualizado
-                df_grafico[nome] = yf.Ticker(info["Ticker_Raw"]).history(period="30d")['Close']
-
-        # Tabela Resumo da Carteira
-        html_c = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-            <thead><tr><th>Ativo</th><th>Qtd</th><th>PM (Custo)</th><th>Valor Atual</th><th>Lucro/Prej</th></tr></thead>
-            <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>R$ {r['PM']}</td><td>R$ {r['Total Atual']}</td><td>{r['Lucro']}</td></tr>" for r in lista_c])}</tbody>
-        </table></div>"""
-        st.markdown(html_c, unsafe_allow_html=True)
-
-        st.markdown("---")
-        st.subheader("💰 Patrimônio Global")
-        with st.sidebar:
-            st.header("⚙️ Ajustes")
-            v_na_xp = st.number_input("Saldo (R$):", value=0.0)
-            g_joias = st.number_input("Ouro (g):", value=0.0)
-            v_minerais = st.number_input("Bens (R$):", value=0.0)
-
-        p_ouro = float(df_radar[df_radar['Ativo'] == "Jóias (Ouro)"]['V_Cru'].values[0])
-        patri_global = v_ativos_total + v_na_xp + (g_joias * p_ouro) + v_minerais
-        
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Bolsa/Criptos", f"R$ {v_ativos_total:,.2f}")
-        m2.metric("Renda Mensal", f"R$ {renda_total:,.2f}")
-        m3.metric("PATRIMÔNIO", f"R$ {patri_global:,.2f}")
-
-        st.line_chart(df_grafico)
-
-# ==================== ABA 2: MANUAL DIDÁTICO ====================
-with tab_manual:
-    st.header("📖 Guia de Operação - Sistema Rockefeller")
-    
-    st.markdown("### 1. Radar de Ativos (Inteligência de Preço)")
-    st.markdown("""<div class="manual-section">Identifica distorções entre o preço de mercado e a média dos últimos 30 dias. 
-    <b>Barato:</b> Oportunidade. <b>Caro:</b> Cuidado.</div>""", unsafe_allow_html=True)
-
-    st.markdown("### 2. Raio-X de Volatilidade (Análise de Risco)")
-    st.markdown("""<div class="manual-section">Monitora a agressividade do mercado. 
-    O alerta <b>🚨 RECORDE</b> avisa se o preço hoje é a mínima absoluta do mês.</div>""", unsafe_allow_html=True)
-
-    st.markdown("### 3. Gestor de Carteira Dinâmica")
-    st.markdown("""<div class="manual-section"><b>Cálculo Automático:</b> Insira o total de dinheiro investido e a quantidade de cotas. 
-    O sistema calcula seu <b>PM (Preço Médio)</b> e seu <b>Lucro Real</b> comparando com a bolsa agora.</div>""", unsafe_allow_html=True)
-
-    st.markdown("### 4. Patrimônio Global")
-    st.markdown("""<div class="manual-section">Consolida sua riqueza total: Saldo Bancário + Valor de Mercado das Ações + Ouro físico.</div>""", unsafe_allow_html=True)
+                st.markdown(
