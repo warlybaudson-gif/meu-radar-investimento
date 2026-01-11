@@ -36,7 +36,7 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
     "📖 Manual de Instruções"
 ])
 
-# --- PROCESSAMENTO DE DADOS (INTEGRAL ORIGINAL) ---
+# --- PROCESSAMENTO DE DADOS ---
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
@@ -86,6 +86,7 @@ def calcular_dados(lista):
 
 df_radar = calcular_dados(tickers_map)
 df_radar_modelo = calcular_dados(modelo_huli_tickers)
+
 if 'carteira' not in st.session_state: st.session_state.carteira = {}
 if 'carteira_modelo' not in st.session_state: st.session_state.carteira_modelo = {}
 
@@ -166,7 +167,6 @@ with tab_radar_modelo:
     </table></div>"""
     st.markdown(html_radar_m, unsafe_allow_html=True)
 
-    # ADIÇÃO: RAIO-X DE VOLATILIDADE
     st.subheader("📊 Raio-X de Volatilidade (Ativos Modelo)")
     html_vol_m = f"""<div class="mobile-table-container"><table class="rockefeller-table">
         <thead><tr><th>Ativo</th><th>Dias A/B</th><th>Pico</th><th>Fundo</th><th>Alerta</th></tr></thead>
@@ -174,7 +174,6 @@ with tab_radar_modelo:
     </table></div>"""
     st.markdown(html_vol_m, unsafe_allow_html=True)
 
-    # ADIÇÃO: SENTIMENTO DE MERCADO
     st.subheader("🌡️ Sentimento de Mercado (Modelo)")
     caros_m = len(df_radar_modelo[df_radar_modelo['Status M'] == "❌ SOBREPREÇO"])
     score_m = (caros_m / len(df_radar_modelo)) * 100 if len(df_radar_modelo) > 0 else 0
@@ -182,7 +181,6 @@ with tab_radar_modelo:
     st.write(f"Índice de Sobrepreço Modelo: **{int(score_m)}%**")
 
     st.markdown("---")
-    # ADIÇÃO: GESTOR DE CARTEIRA DINÂMICA
     st.subheader("🧮 Gestor de Carteira: Ativos Modelo")
     capital_xp_m = st.number_input("💰 Capital na Corretora para Ativos Modelo (R$):", min_value=0.0, value=0.0, step=100.0, key="cap_huli")
     ativos_sel_m = st.multiselect("Habilite ativos da Carteira Modelo:", df_radar_modelo["Ativo"].unique(), key="sel_huli")
@@ -216,7 +214,7 @@ with tab_radar_modelo:
             <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>R$ {r['PM']}</td><td>R$ {r['Total']}</td><td>{r['Lucro']}</td></tr>" for r in lista_c_m])}</tbody>
         </table></div>""", unsafe_allow_html=True)
 
-        # ADIÇÃO: PATRIMÔNIO GLOBAL (MODELO)
+        # ADIÇÃO DO PATRIMÔNIO GLOBAL (ABA MODELO)
         st.subheader("💰 Patrimônio Global (Estratégia Modelo)")
         patri_total_modelo = v_ativos_atual_m + troco_real_m
         col_m1, col_m2, col_m3 = st.columns(3)
@@ -224,7 +222,7 @@ with tab_radar_modelo:
         col_m2.metric("Saldo em Caixa", f"R$ {troco_real_m:,.2f}")
         col_m3.metric("PATRIMÔNIO MODELO TOTAL", f"R$ {patri_total_modelo:,.2f}")
 
-        # ADIÇÃO: GRÁFICO DE BARRAS
+        # ADIÇÃO DO GRÁFICO DE BARRAS (ABA MODELO)
         st.subheader("📊 Composição da Carteira Modelo")
         if nomes_grafico:
             df_bar_m = pd.DataFrame({"Ativo": nomes_grafico, "Valor Total (R$)": valores_grafico})
@@ -245,25 +243,20 @@ with tab_huli:
                 plano.append({"Ativo": nome, "Ação": "APORTAR" if nec > 0 else "AGUARDAR", "Valor": f"R$ {max(0, nec):.2f}"})
             st.table(pd.DataFrame(plano))
 
-# ==================== ABA 4: CARTEIRA MODELO HULI (INTEGRAL) ====================
+# ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
-    st.write("Esta é a base de ativos que compõe o método dele para proteção e renda.")
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras (Renda Passiva)</b><br><small>Foco em Dividendos e Estabilidade</small></div>', unsafe_allow_html=True)
-        st.write("**• Energia:** TAEE11 (Taesa), EGIE3 (Engie), ALUP11 (Alupar)")
-        st.write("**• Saneamento:** SAPR11 (Sanepar), SBSP3 (Sabesp)")
-        st.write("**• Bancos:** BBAS3 (Banco do Brasil), ITUB4 (Itaú), SANB11 (Santander)")
-        st.write("**• Seguradoras:** BBSE3 (BB Seguridade), CXSE3 (Caixa Seguridade)")
-        st.markdown('<div class="huli-category"><b>🏢 Fundos Imobiliários (Renda Mensal)</b><br><small>Aluguéis sem Imposto de Renda</small></div>', unsafe_allow_html=True)
-        st.write("**• Logística:** HGLG11, XPLG11, BTLG11 | **• Shoppings:** XPML11, VISC11, HGBS11")
+        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras (Renda Passiva)</b></div>', unsafe_allow_html=True)
+        st.write("**• Energia:** TAEE11, EGIE3, ALUP11 | **• Bancos:** BBAS3, ITUB4")
+        st.markdown('<div class="huli-category"><b>🏢 Fundos Imobiliários (Renda Mensal)</b></div>', unsafe_allow_html=True)
+        st.write("**• Logística:** HGLG11, XPLG11 | **• Shoppings:** XPML11, VISC11")
     with col2:
-        st.markdown('<div class="huli-category"><b>🐕 Cães de Guarda (Segurança)</b><br><small>Reserva de Oportunidade e Valor</small></div>', unsafe_allow_html=True)
-        st.write("**• Ouro:** OZ1D ou ETF GOLD11 | **• Dólar:** IVVB11 (S&P 500)")
-        st.write("**• Renda Fixa:** Tesouro Selic e CDBs de liquidez diária")
-        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida (Crescimento)</b><br><small>Aposta no futuro e multiplicação</small></div>', unsafe_allow_html=True)
-        st.write("**• Cripto:** Bitcoin (BTC) e Ethereum (ETH) | **• Tech:** Nvidia (NVDA), Apple (AAPL)")
+        st.markdown('<div class="huli-category"><b>🐕 Cães de Guarda (Segurança)</b></div>', unsafe_allow_html=True)
+        st.write("**• Ouro:** OZ1D | **• Dólar:** IVVB11")
+        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida (Crescimento)</b></div>', unsafe_allow_html=True)
+        st.write("**• Cripto:** BTC, ETH | **• Tech:** NVDA, AAPL")
 
 # ==================== ABA 5: DNA FINANCEIRO ====================
 with tab_dna:
@@ -298,23 +291,6 @@ with tab_backtest:
 with tab_manual:
     st.header("📖 Manual de Instruções - IA Rockefeller")
     with st.expander("🛰️ Radar de Ativos e Preço Justo", expanded=True):
-        st.markdown("""
-        * **Preço Justo (Graham):** Calculado pela fórmula $V = \sqrt{22.5 \cdot LPA \cdot VPA}$. Indica o valor intrínseco do ativo.
-        * **Status Descontado:** Ocorre quando o preço de mercado é inferior ao Preço Justo.
-        * **Ação COMPRAR:** Recomendada apenas quando o ativo está abaixo da média de 30 dias e abaixo do preço justo.
-        """)
+        st.markdown("Explicação sobre Preço Justo (Graham) e indicadores de compra.")
     with st.expander("📊 Raio-X de Volatilidade"):
-        st.markdown("""
-        * **Dias A/B:** Quantidade de dias de Alta (Verde) e Baixa (Vermelho) no último mês.
-        * **🚨 Alerta RECORDE:** Dispara quando o preço atual toca ou cai abaixo da mínima histórica dos últimos 30 dias.
-        """)
-    with st.expander("🧬 DNA Financeiro"):
-        st.markdown("""
-        * **LPA (Lucro por Ação):** Quanto de lucro a empresa gera para cada ação.
-        * **VPA (Valor Patrimonial):** O valor real dos bens da empresa dividido pelas ações.
-        * **P/L:** Indica em quantos anos você recuperaria seu investimento através dos lucros.
-        """)
-    with st.expander("📈 Backtesting"):
-        st.markdown("""
-        Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
-        """)
+        st.markdown("Como ler os alertas de RECORDE e a contagem de dias de alta/baixa.")
