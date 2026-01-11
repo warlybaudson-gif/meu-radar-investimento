@@ -25,7 +25,7 @@ st.markdown("""
 
 st.title("💰 IA Rockefeller")
 
-# CRIAÇÃO DAS ABAS (MANUTENÇÃO DA ESTRUTURA)
+# CRIAÇÃO DAS ABAS
 tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_manual = st.tabs([
     "📊 Painel de Controle", 
     "🔍 Radar Carteira Modelo",
@@ -36,7 +36,7 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
     "📖 Manual de Instruções"
 ])
 
-# --- PROCESSAMENTO DE DADOS (SEM ALTERAÇÕES) ---
+# --- PROCESSAMENTO DE DADOS (INTEGRAL ORIGINAL) ---
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
@@ -180,13 +180,25 @@ with tab_huli:
                 plano.append({"Ativo": nome, "Ação": "APORTAR" if nec > 0 else "AGUARDAR", "Valor": f"R$ {max(0, nec):.2f}"})
             st.table(pd.DataFrame(plano))
 
-# ==================== ABA 4: CARTEIRA MODELO HULI ====================
+# ==================== ABA 4: CARTEIRA MODELO HULI (RESTAURADO INTEGRAL) ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
+    st.write("Esta é a base de ativos que compõe o método dele para proteção e renda.")
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras (Renda Passiva)</b></div>', unsafe_allow_html=True)
-        st.write("**• Energia:** TAEE11, EGIE3, ALUP11 | **• Bancos:** BBAS3, ITUB4")
+        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras (Renda Passiva)</b><br><small>Foco em Dividendos e Estabilidade</small></div>', unsafe_allow_html=True)
+        st.write("**• Energia:** TAEE11 (Taesa), EGIE3 (Engie), ALUP11 (Alupar)")
+        st.write("**• Saneamento:** SAPR11 (Sanepar), SBSP3 (Sabesp)")
+        st.write("**• Bancos:** BBAS3 (Banco do Brasil), ITUB4 (Itaú), SANB11 (Santander)")
+        st.write("**• Seguradoras:** BBSE3 (BB Seguridade), CXSE3 (Caixa Seguridade)")
+        st.markdown('<div class="huli-category"><b>🏢 Fundos Imobiliários (Renda Mensal)</b><br><small>Aluguéis sem Imposto de Renda</small></div>', unsafe_allow_html=True)
+        st.write("**• Logística:** HGLG11, XPLG11, BTLG11 | **• Shoppings:** XPML11, VISC11, HGBS11")
+    with col2:
+        st.markdown('<div class="huli-category"><b>🐕 Cães de Guarda (Segurança)</b><br><small>Reserva de Oportunidade e Valor</small></div>', unsafe_allow_html=True)
+        st.write("**• Ouro:** OZ1D ou ETF GOLD11 | **• Dólar:** IVVB11 (S&P 500)")
+        st.write("**• Renda Fixa:** Tesouro Selic e CDBs de liquidez diária")
+        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida (Crescimento)</b><br><small>Aposta no futuro e multiplicação</small></div>', unsafe_allow_html=True)
+        st.write("**• Cripto:** Bitcoin (BTC) e Ethereum (ETH) | **• Tech:** Nvidia (NVDA), Apple (AAPL)")
 
 # ==================== ABA 5: DNA FINANCEIRO ====================
 with tab_dna:
@@ -222,34 +234,24 @@ with tab_backtest:
 # ==================== ABA 7: MANUAL DE INSTRUÇÕES (EXPANDIDO) ====================
 with tab_manual:
     st.header("📖 Manual de Instruções - IA Rockefeller")
-    
     with st.expander("🛰️ Radar de Ativos e Preço Justo", expanded=True):
         st.markdown("""
         * **Preço Justo (Graham):** Calculado pela fórmula $V = \sqrt{22.5 \cdot LPA \cdot VPA}$. Indica o valor intrínseco do ativo.
         * **Status Descontado:** Ocorre quando o preço de mercado é inferior ao Preço Justo.
         * **Ação COMPRAR:** Recomendada apenas quando o ativo está abaixo da média de 30 dias (oportunidade técnica) e abaixo do preço justo (oportunidade fundamentalista).
         """)
-
     with st.expander("📊 Raio-X de Volatilidade"):
         st.markdown("""
         * **Dias A/B:** Quantidade de dias de Alta (Verde) e Baixa (Vermelho) no último mês.
         * **🚨 Alerta RECORDE:** Dispara quando o preço atual toca ou cai abaixo da mínima histórica dos últimos 30 dias. É o sinal de 'Pânico' para compras agressivas.
         """)
-
     with st.expander("🧬 DNA Financeiro"):
         st.markdown("""
         * **LPA (Lucro por Ação):** Quanto de lucro a empresa gera para cada ação.
         * **VPA (Valor Patrimonial):** O valor real dos bens da empresa dividido pelas ações.
         * **P/L:** Indica em quantos anos você recuperaria seu investimento através dos lucros.
         """)
-
     with st.expander("📈 Backtesting"):
         st.markdown("""
         Esta aba prova a eficácia da estratégia. Ela localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse tido a disciplina de comprar naquele momento de queda máxima.
-        """)
-
-    with st.expander("🎯 Estratégia Huli & Metas"):
-        st.markdown("""
-        * **Aporte Mensal:** Insira o valor que tem disponível para investir hoje.
-        * **Rebalanceamento:** O sistema sugere onde colocar o dinheiro para manter sua carteira equilibrada conforme as porcentagens que você definiu nos sliders.
         """)
