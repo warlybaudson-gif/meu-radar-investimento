@@ -36,7 +36,7 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
     "📖 Manual de Instruções"
 ])
 
-# --- PROCESSAMENTO DE DADOS ---
+# --- PROCESSAMENTO DE DADOS (INTEGRAL ORIGINAL) ---
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
@@ -214,7 +214,7 @@ with tab_radar_modelo:
             <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>R$ {r['PM']}</td><td>R$ {r['Total']}</td><td>{r['Lucro']}</td></tr>" for r in lista_c_m])}</tbody>
         </table></div>""", unsafe_allow_html=True)
 
-        # --- INÍCIO DA ADIÇÃO SOLICITADA ---
+        # ADIÇÃO SOLICITADA: PATRIMÔNIO GLOBAL E GRÁFICO
         st.subheader("💰 Patrimônio Global (Estratégia Modelo)")
         patri_total_modelo = v_ativos_atual_m + troco_real_m
         col_m1, col_m2, col_m3 = st.columns(3)
@@ -226,7 +226,6 @@ with tab_radar_modelo:
         if nomes_grafico:
             df_bar_m = pd.DataFrame({"Ativo": nomes_grafico, "Valor Total (R$)": valores_grafico})
             st.bar_chart(df_bar_m.set_index("Ativo"))
-        # --- FIM DA ADIÇÃO SOLICITADA ---
 
 # ==================== ABA 3: ESTRATÉGIA HULI ====================
 with tab_huli:
@@ -243,7 +242,7 @@ with tab_huli:
                 plano.append({"Ativo": nome, "Ação": "APORTAR" if nec > 0 else "AGUARDAR", "Valor": f"R$ {max(0, nec):.2f}"})
             st.table(pd.DataFrame(plano))
 
-# ==================== ABA 4: CARTEIRA MODELO HULI (RESTAURADO) ====================
+# ==================== ABA 4: CARTEIRA MODELO HULI (CONTEÚDO ORIGINAL) ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
     st.write("Esta é a base de ativos que compõe o método dele para proteção e renda.")
