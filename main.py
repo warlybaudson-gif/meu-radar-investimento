@@ -36,7 +36,7 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
     "📖 Manual de Instruções"
 ])
 
-# --- PROCESSAMENTO DE DADOS ---
+# --- PROCESSAMENTO DE DADOS (INTEGRAL ORIGINAL) ---
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
@@ -86,7 +86,6 @@ def calcular_dados(lista):
 
 df_radar = calcular_dados(tickers_map)
 df_radar_modelo = calcular_dados(modelo_huli_tickers)
-
 if 'carteira' not in st.session_state: st.session_state.carteira = {}
 if 'carteira_modelo' not in st.session_state: st.session_state.carteira_modelo = {}
 
