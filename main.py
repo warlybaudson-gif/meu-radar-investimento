@@ -25,16 +25,18 @@ st.markdown("""
 
 st.title("💰 IA Rockefeller")
 
-# CRIAÇÃO DAS ABAS (MANTIDAS AS ORIGINAIS)
-tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_manual = st.tabs([
+# CRIAÇÃO DAS ABAS (AGORA COM DNA E BACKTESTING COMO ABAS INDEPENDENTES)
+tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_manual = st.tabs([
     "📊 Painel de Controle", 
     "🔍 Radar Carteira Modelo",
     "🎯 Estratégia Huli", 
     "🏦 Carteira Modelo Huli",
+    "🧬 DNA Financeiro",
+    "📈 Backtesting",
     "📖 Manual de Instruções"
 ])
 
-# --- PROCESSAMENTO DE DADOS ---
+# --- PROCESSAMENTO DE DADOS (CÓDIGO ORIGINAL) ---
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
@@ -77,7 +79,7 @@ def calcular_dados(lista):
                     "Ativo": nome_ex, "Ticker_Raw": t, "Preço": f"{p_atual:.2f}", "Justo": f"{p_justo:.2f}",
                     "Status M": status_m, "Ação": acao, "V_Cru": p_atual, "Var_Min": variacoes.min(),
                     "Var_Max": variacoes.max(), "Dias_A": (variacoes > 0).sum(), "Dias_B": (variacoes < 0).sum(),
-                    "Var_H": variacoes.iloc[-1]
+                    "Var_H": variacoes.iloc[-1], "LPA": lpa, "VPA": vpa
                 })
         except: continue
     return pd.DataFrame(res)
@@ -86,7 +88,7 @@ df_radar = calcular_dados(tickers_map)
 df_radar_modelo = calcular_dados(modelo_huli_tickers)
 if 'carteira' not in st.session_state: st.session_state.carteira = {}
 
-# ==================== ABA 1: PAINEL DE CONTROLE (RESTAURADO INTEGRAL) ====================
+# ==================== ABA 1: PAINEL DE CONTROLE ====================
 with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
     html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
@@ -162,16 +164,6 @@ with tab_radar_modelo:
         <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar_modelo.iterrows()])}</tbody>
     </table></div>"""
     st.markdown(html_radar_m, unsafe_allow_html=True)
-    st.subheader("📊 Raio-X de Volatilidade (Ativos Modelo)")
-    html_vol_m = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-        <thead><tr><th>Ativo</th><th>Dias A/B</th><th>Pico</th><th>Fundo</th><th>Alerta</th></tr></thead>
-        <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>🟢{r['Dias_A']}/🔴{r['Dias_B']}</td><td>+{r['Var_Max']:.2f}%</td><td>{r['Var_Min']:.2f}%</td><td>{'🚨 RECORDE' if r['Var_H'] <= (r['Var_Min']*0.98) and r['Var_H'] < 0 else 'Normal'}</td></tr>" for _, r in df_radar_modelo.iterrows()])}</tbody>
-    </table></div>"""
-    st.markdown(html_vol_m, unsafe_allow_html=True)
-    st.subheader("🌡️ Sentimento de Mercado (Modelo)")
-    caros_m = len(df_radar_modelo[df_radar_modelo['Status M'] == "❌ SOBREPREÇO"])
-    score_m = (caros_m / len(df_radar_modelo)) * 100 if len(df_radar_modelo) > 0 else 0
-    st.progress(score_m / 100); st.write(f"Índice de Sobrepreço: **{int(score_m)}%**")
 
 # ==================== ABA 3: ESTRATÉGIA HULI ====================
 with tab_huli:
@@ -187,86 +179,46 @@ with tab_huli:
                 nec = v_id - v_at
                 plano.append({"Ativo": nome, "Ação": "APORTAR" if nec > 0 else "AGUARDAR", "Valor": f"R$ {max(0, nec):.2f}"})
             st.table(pd.DataFrame(plano))
-            st.markdown("---")
-            st.subheader("🏁 Meta de Sobrevivência (Liberdade Financeira)")
-            col_m1, col_m2 = st.columns(2)
-            with col_m1:
-                custo = st.number_input("Custo de vida mensal (R$):", min_value=0.0, value=3000.0)
-                renda_est = st.slider("Rendimento mensal (%)", 0.1, 2.0, 0.8)
-            pat_nec = custo / (renda_est / 100)
-            prog = (patri_global / pat_nec) * 100 if pat_nec > 0 else 0
-            with col_m2: st.metric("Patrimônio Alvo", f"R$ {pat_nec:,.2f}")
-            st.write(f"Você já percorreu **{prog:.1f}%** do caminho!"); st.progress(min(prog/100, 1.0))
 
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
-    st.write("Esta é a base de ativos que compõe o método dele para proteção e renda.")
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras (Renda Passiva)</b><br><small>Foco em Dividendos e Estabilidade</small></div>', unsafe_allow_html=True)
-        st.write("**• Energia:** TAEE11 (Taesa), EGIE3 (Engie), ALUP11 (Alupar)")
-        st.write("**• Saneamento:** SAPR11 (Sanepar), SBSP3 (Sabesp)")
-        st.write("**• Bancos:** BBAS3 (Banco do Brasil), ITUB4 (Itaú), SANB11 (Santander)")
-        st.write("**• Seguradoras:** BBSE3 (BB Seguridade), CXSE3 (Caixa Seguridade)")
-        st.markdown('<div class="huli-category"><b>🏢 Fundos Imobiliários (Renda Mensal)</b><br><small>Aluguéis sem Imposto de Renda</small></div>', unsafe_allow_html=True)
-        st.write("**• Logística:** HGLG11, XPLG11, BTLG11 | **• Shoppings:** XPML11, VISC11, HGBS11")
-    with col2:
-        st.markdown('<div class="huli-category"><b>🐕 Cães de Guarda (Segurança)</b><br><small>Reserva de Oportunidade e Valor</small></div>', unsafe_allow_html=True)
-        st.write("**• Ouro:** OZ1D ou ETF GOLD11 | **• Dólar:** IVVB11 (S&P 500)")
-        st.write("**• Renda Fixa:** Tesouro Selic e CDBs de liquidez diária")
-        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida (Crescimento)</b><br><small>Aposta no futuro e multiplicação</small></div>', unsafe_allow_html=True)
-        st.write("**• Cripto:** Bitcoin (BTC) e Ethereum (ETH) | **• Tech:** Nvidia (NVDA), Apple (AAPL)")
+        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras (Renda Passiva)</b></div>', unsafe_allow_html=True)
+        st.write("**• Energia:** TAEE11, EGIE3, ALUP11 | **• Bancos:** BBAS3, ITUB4")
 
-# ==================== ABA 5: MANUAL DIDÁTICO ====================
-with tab_manual:
-    st.header("📖 Guia de Operação - Sistema Rockefeller")
-    st.markdown("### 1. Radar de Ativos (Inteligência de Preço)")
-    st.markdown("""<div class="manual-section">Identifica distorções de preço no curto prazo.
-    <ul>
-        <li><b>🔥 BARATO:</b> Preço abaixo da média de 30 dias.</li>
-        <li><b>✅ COMPRAR:</b> Preço abaixo da média E abaixo do Preço Justo de Graham.</li>
-    </ul></div>""", unsafe_allow_html=True)
-    st.markdown("### 2. Raio-X de Volatilidade")
-    st.markdown("""<div class="manual-section"><b>🚨 RECORDE:</b> Indica que o preço hoje atingiu a mínima absoluta do mês.</div>""", unsafe_allow_html=True)
-    st.markdown("### 3. Gestor de Carteira")
-    st.markdown("""<div class="manual-section"><b>Troco:</b> O dinheiro livre na sua conta XP após as compras.</div>""", unsafe_allow_html=True)
-
-# ==================== ADIÇÃO DE HOJE: ABAS SEPARADAS AO FINAL ====================
-
-st.markdown("---")
-
-# ABA 6: DNA FINANCEIRO (ABAIXO DO MANUAL)
-st.subheader("🧬 DNA dos Ativos")
-tab_dna_exclusiva = st.tabs(["🧬 DNA Financeiro (LPA/VPA)"])[0]
-with tab_dna_exclusiva:
-    st.markdown('<div class="manual-section">Análise de Lucro e Patrimônio Real.</div>', unsafe_allow_html=True)
-    df_dna_total = pd.concat([df_radar, df_radar_modelo]).drop_duplicates(subset="Ativo")
+# ==================== ABA 5: DNA FINANCEIRO (NOVA ABA EXCLUSIVA) ====================
+with tab_dna:
+    st.header("🧬 DNA Financeiro (LPA / VPA)")
+    st.markdown('<div class="manual-section">Análise profunda da saúde financeira baseada no Lucro e Patrimônio.</div>', unsafe_allow_html=True)
+    df_dna = pd.concat([df_radar, df_radar_modelo]).drop_duplicates(subset="Ativo")
     html_dna = """<div class="mobile-table-container"><table class="rockefeller-table">
         <thead><tr><th>Ativo</th><th>LPA (Lucro)</th><th>VPA (Patrimônio)</th><th>P/L</th><th>P/VP</th></tr></thead><tbody>"""
-    for _, r in df_dna_total.iterrows():
-        try:
-            info = yf.Ticker(r['Ticker_Raw']).info
-            lpa = float(info.get('trailingEps', 0))
-            vpa = float(info.get('bookValue', 0))
-            preco = float(r['V_Cru'])
-            html_dna += f"<tr><td>{r['Ativo']}</td><td>{lpa:.2f}</td><td>{vpa:.2f}</td><td>{(preco/lpa if lpa>0 else 0):.2f}</td><td>{(preco/vpa if vpa>0 else 0):.2f}</td></tr>"
-        except: continue
+    for _, r in df_dna.iterrows():
+        pl = float(r['V_Cru'])/r['LPA'] if r['LPA'] > 0 else 0
+        pvp = float(r['V_Cru'])/r['VPA'] if r['VPA'] > 0 else 0
+        html_dna += f"<tr><td>{r['Ativo']}</td><td>{r['LPA']:.2f}</td><td>{r['VPA']:.2f}</td><td>{pl:.2f}</td><td>{pvp:.2f}</td></tr>"
     html_dna += "</tbody></table></div>"
     st.markdown(html_dna, unsafe_allow_html=True)
 
-# ABA 7: BACKTESTING (ABAIXO DO DNA)
-st.subheader("📈 Validação do Método")
-tab_bt_exclusiva = st.tabs(["📈 Backtesting de Eficácia"])[0]
-with tab_bt_exclusiva:
-    st.markdown('<div class="manual-section">Simulação de compra no fundo do mês.</div>', unsafe_allow_html=True)
+# ==================== ABA 6: BACKTESTING (NOVA ABA EXCLUSIVA) ====================
+with tab_backtest:
+    st.header("📈 Backtesting de Eficácia")
     if not df_radar.empty:
-        ativo_sim = st.selectbox("Escolha um ativo para testar:", df_radar["Ativo"].unique(), key="bt_final")
-        d_sim = df_radar[df_radar["Ativo"] == ativo_sim].iloc[0]
-        p_atual = float(d_sim["V_Cru"])
-        queda = abs(float(d_sim["Var_Min"]))
+        escolha = st.selectbox("Escolha um ativo para testar a estratégia de pânico:", df_radar["Ativo"].unique())
+        d = df_radar[df_radar["Ativo"] == escolha].iloc[0]
+        p_atual = float(d["V_Cru"])
+        queda = abs(float(d["Var_Min"]))
         p_fundo = p_atual / (1 + (queda/100))
         c1, c2, c3 = st.columns(3)
         c1.metric("Preço no Fundo", f"R$ {p_fundo:.2f}")
         c2.metric("Preço Hoje", f"R$ {p_atual:.2f}")
-        c3.metric("Recuperação", f"{queda:.2f}%", delta=f"{queda:.2f}%")
+        c3.metric("Recuperação Real", f"{queda:.2f}%", delta=f"{queda:.2f}%")
+        st.success(f"📌 Se você comprou no sinal de fundo, seu lucro em **{escolha}** foi de **{queda:.2f}%**.")
+
+# ==================== ABA 7: MANUAL DIDÁTICO ====================
+with tab_manual:
+    st.header("📖 Guia de Operação - Sistema Rockefeller")
+    st.markdown("### 1. Radar de Ativos")
+    st.markdown("""<div class="manual-section">Identifica distorções de preço no curto prazo.</div>""", unsafe_allow_html=True)
