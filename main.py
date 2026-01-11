@@ -2,9 +2,15 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
-import plotly.graph_objects as go
 
-# 1. ESTILO E IDENTIDADE VISUAL
+# Tenta importar o Plotly, se não conseguir, o app não quebra
+try:
+    import plotly.graph_objects as go
+    HAS_PLOTLY = True
+except ImportError:
+    HAS_PLOTLY = False
+
+# 1. ESTILO E IDENTIDADE VISUAL (PRESERVADOS)
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
 st.markdown("""
@@ -26,12 +32,12 @@ st.markdown("""
 
 st.title("💰 IA Rockefeller")
 
-# 2. ABAS DE NAVEGAÇÃO
+# 2. ABAS
 tab_painel, tab_radar_modelo, tab_dna, tab_huli, tab_modelo, tab_manual = st.tabs([
     "📊 Painel de Controle", "🔍 Radar Carteira Modelo", "🧬 DNA (LPA/VPA)", "🎯 Estratégia Huli", "🏦 Carteira Modelo Huli", "📖 Manual de Instruções"
 ])
 
-# 3. MAPEAMENTO DE ATIVOS (VARREDURA TOTAL)
+# 3. MAPEAMENTO (VARREDURA TOTAL)
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
@@ -45,7 +51,6 @@ modelo_huli_tickers = {
     "XPML11": "XPML11.SA", "IVVB11": "IVVB11.SA", "APPLE": "AAPL"
 }
 
-# 4. MOTOR DE DADOS
 try:
     cambio_hoje = yf.Ticker("USDBRL=X").history(period="1d")['Close'].iloc[-1]
 except:
@@ -94,16 +99,17 @@ with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
     st.markdown(f"""<div class="mobile-table-container"><table class="rockefeller-table"><thead><tr><th>Ativo</th><th>Preço (R$)</th><th>P. Justo</th><th>Status</th><th>Ação</th></tr></thead><tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']:.2f}</td><td>{r['Justo']:.2f}</td><td>{r['Status']}</td><td>{r['Ação']}</td></tr>" for _, r in df_p.iterrows()])}</tbody></table></div>""", unsafe_allow_html=True)
     
-    st.subheader("📊 Raio-X de Volatilidade (Nióbio, Grafeno, Cripto)")
+    st.subheader("📊 Raio-X de Volatilidade")
     st.markdown(f"""<div class="mobile-table-container"><table class="rockefeller-table"><thead><tr><th>Ativo</th><th>Dias A/B</th><th>Pico</th><th>Fundo</th><th>Alerta</th></tr></thead><tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>🟢{r['Dias_A']}/🔴{r['Dias_B']}</td><td>+{r['Var_Max']:.2f}%</td><td>{r['Var_Min']:.2f}%</td><td>{'🚨 RECORDE' if r['Var_H'] <= (r['Var_Min']*0.98) and r['Var_H'] < 0 else 'Normal'}</td></tr>" for _, r in df_p.iterrows()])}</tbody></table></div>""", unsafe_allow_html=True)
 
-    st.subheader("📉 Margem de Segurança: Preço vs Valor de Graham")
-    fig = go.Figure(data=[
-        go.Bar(name='Preço Atual', x=df_p['Ativo'], y=df_p['Preço'], marker_color='#58a6ff'),
-        go.Bar(name='Preço Justo', x=df_p['Ativo'], y=df_p['Justo'], marker_color='#238636')
-    ])
-    fig.update_layout(barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color='white')
-    st.plotly_chart(fig, use_container_width=True)
+    if HAS_PLOTLY:
+        st.subheader("📉 Margem de Segurança: Preço vs Valor de Graham")
+        fig = go.Figure(data=[
+            go.Bar(name='Preço Atual', x=df_p['Ativo'], y=df_p['Preço'], marker_color='#58a6ff'),
+            go.Bar(name='Preço Justo', x=df_p['Ativo'], y=df_p['Justo'], marker_color='#238636')
+        ])
+        fig.update_layout(barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color='white')
+        st.plotly_chart(fig, use_container_width=True)
 
     with st.sidebar:
         st.header("⚙️ Patrimônio Global")
@@ -144,7 +150,6 @@ with tab_dna:
 
 # --- ABA 4: ESTRATÉGIA + BACKTESTING ---
 with tab_huli:
-    # ... (Calculadora de rebalanceamento e sobrevivência preservadas)
     st.subheader("📈 Backtesting: Eficácia do Sinal Rockefeller")
     at_f = st.selectbox("Simular Ativo:", df_p["Ativo"].unique())
     d_f = df_p[df_p["Ativo"] == at_f].iloc[0]
@@ -154,10 +159,16 @@ with tab_huli:
     - Valor no Fundo (Recorde): R$ {p_fundo:.2f}
     - Ganho em comprar no pânico: {abs(d_f['Var_Min']):.2f}%""")
 
-# --- ABA 5: CARTEIRA MODELO (TEXTOS INTEGRAIS) ---
+# --- ABA 5: CARTEIRA MODELO ---
 with tab_modelo:
-    st.header("🏦 Carteira Modelo Huli (Onde o Dinheiro Cresce)")
-    # Textos integrais das Vacas Leiteiras, Cavalos de Corrida, etc. (Mantidos)
+    st.header("🏦 Carteira Modelo Huli")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras</b></div>', unsafe_allow_html=True)
+        st.write("**• Energia:** TAEE11, EGIE3, ALUP11\n\n**• Saneamento:** SAPR11, SBSP3\n\n**• Bancos:** BBAS3, ITUB4")
+    with col_b:
+        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida</b></div>', unsafe_allow_html=True)
+        st.write("**• Cripto:** Bitcoin, Ethereum\n\n**• Tech:** Nvidia, Apple")
 
 # --- ABA 6: MANUAL ---
 with tab_manual:
