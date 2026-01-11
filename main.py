@@ -3,14 +3,14 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 
-# Tenta importar o Plotly, se não conseguir, o app não quebra
+# Tenta importar o Plotly para o gráfico, sem quebrar o app
 try:
     import plotly.graph_objects as go
     HAS_PLOTLY = True
 except ImportError:
     HAS_PLOTLY = False
 
-# 1. ESTILO E IDENTIDADE VISUAL (PRESERVADOS)
+# 1. ESTILO E CONFIGURAÇÃO (PRESERVADOS)
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
 st.markdown("""
@@ -32,12 +32,13 @@ st.markdown("""
 
 st.title("💰 IA Rockefeller")
 
-# 2. ABAS
+# 2. ABAS COMPLETAS
 tab_painel, tab_radar_modelo, tab_dna, tab_huli, tab_modelo, tab_manual = st.tabs([
-    "📊 Painel de Controle", "🔍 Radar Carteira Modelo", "🧬 DNA (LPA/VPA)", "🎯 Estratégia Huli", "🏦 Carteira Modelo Huli", "📖 Manual de Instruções"
+    "📊 Painel de Controle", "🔍 Radar Carteira Modelo", "🧬 DNA (LPA/VPA)", 
+    "🎯 Estratégia Huli", "🏦 Carteira Modelo Huli", "📖 Manual de Instruções"
 ])
 
-# 3. MAPEAMENTO (VARREDURA TOTAL)
+# 3. MAPEAMENTO DE ATIVOS (VARREDURA COMPLETA)
 tickers_map = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
     "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
@@ -56,8 +57,8 @@ try:
 except:
     cambio_hoje = 5.50
 
-def motor_calculo(lista):
-    colecao = []
+def motor_dados(lista):
+    res = []
     for nome, t in lista.items():
         try:
             a = yf.Ticker(t)
@@ -82,16 +83,16 @@ def motor_calculo(lista):
                 vr = h['Close'].pct_change() * 100
                 acao = "✅ COMPRAR" if p_at < m30 and status == "✅ DESCONTADO" else "⚠️ ESPERAR"
                 
-                colecao.append({
+                res.append({
                     "Ativo": nome, "Preço": p_at, "Justo": pj, "LPA": lpa_f, "VPA": vpa_f,
                     "Status": status, "Ação": acao, "Var_Min": vr.min(), "Var_Max": vr.max(),
                     "Dias_A": (vr > 0).sum(), "Dias_B": (vr < 0).sum(), "Var_H": vr.iloc[-1]
                 })
         except: continue
-    return pd.DataFrame(colecao)
+    return pd.DataFrame(res)
 
-df_p = motor_calculo(tickers_map)
-df_m = motor_calculo(modelo_huli_tickers)
+df_p = motor_dados(tickers_map)
+df_m = motor_dados(modelo_huli_tickers)
 if 'carteira' not in st.session_state: st.session_state.carteira = {}
 
 # --- ABA 1: PAINEL DE CONTROLE ---
@@ -120,26 +121,26 @@ with tab_painel:
     cap_xp_total = st.number_input("💰 Capital Total na XP (R$):", value=0.0)
     ativos_ativos = st.multiselect("Habilite ativos:", df_p["Ativo"].unique(), default=["PETR4.SA"])
     
-    v_total_inv_h, v_bolsa_agora_h = 0, 0
+    v_total_inv, v_bolsa_agora = 0, 0
     if ativos_ativos:
         c1, c2 = st.columns(2)
-        for i, n_h in enumerate(ativos_ativos):
+        for i, n in enumerate(ativos_ativos):
             with [c1, c2][i % 2]:
-                qh = st.number_input(f"Qtd ({n_h}):", key=f"qh_{n_h}")
-                ih = st.number_input(f"Investido R$ ({n_h}):", key=f"ih_{n_h}")
-                pm_h = df_p[df_p["Ativo"] == n_h]["Preço"].values[0]
-                va_h = qh * pm_h
-                v_bolsa_agora_h += va_h
-                v_total_inv_h += ih
-                st.session_state.carteira[n_h] = {"atual": va_h}
+                qh = st.number_input(f"Qtd ({n}):", key=f"qh_{n}")
+                ih = st.number_input(f"Investido R$ ({n}):", key=f"ih_{n}")
+                pm = df_p[df_p["Ativo"] == n]["Preço"].values[0]
+                va = qh * pm
+                v_bolsa_agora += va
+                v_total_inv += ih
+                st.session_state.carteira[n] = {"atual": va}
         
-        tr_xp = cap_xp_total - v_total_inv_h
-        po_h = df_p[df_p["Ativo"] == "Jóias (Ouro)"]["Preço"].values[0]
-        patri_glob = v_bolsa_agora_h + tr_xp + (g_ouro * po_h) + v_bens_imoveis
+        tr_xp = cap_xp_total - v_total_inv
+        po = df_p[df_p["Ativo"] == "Jóias (Ouro)"]["Preço"].values[0]
+        patri_glob = v_bolsa_agora + tr_xp + (g_ouro * po) + v_bens_imoveis
         st.markdown("---")
         m1, m2, m3 = st.columns(3)
-        m1.metric("Bolsa & Cripto", f"R$ {v_bolsa_agora_h:,.2f}")
-        m2.metric("Saldo, Ouro & Bens", f"R$ {(tr_xp + (g_ouro * po_h) + v_bens_imoveis):,.2f}")
+        m1.metric("Bolsa & Cripto", f"R$ {v_bolsa_agora:,.2f}")
+        m2.metric("Troco, Ouro & Bens", f"R$ {(tr_xp + (g_ouro * po) + v_bens_imoveis):,.2f}")
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_glob:,.2f}")
 
 # --- ABA 3: DNA (LPA/VPA) ---
@@ -150,27 +151,51 @@ with tab_dna:
 
 # --- ABA 4: ESTRATÉGIA + BACKTESTING ---
 with tab_huli:
-    st.subheader("📈 Backtesting: Eficácia do Sinal Rockefeller")
+    st.header("🎯 Estratégia Tio Huli & Rebalanceamento")
+    aporte_dia = st.number_input("Aporte planejado (R$):", value=0.0)
+    if ativos_ativos:
+        metas_h = {n: st.slider(f"Meta % {n}", 0, 100, 100//len(ativos_ativos), key=f"mh_{n}") for n in ativos_ativos}
+        if sum(metas_h.values()) == 100:
+            plano = []
+            for n in ativos_ativos:
+                va_h = st.session_state.carteira[n]["atual"]
+                vid = (v_bolsa_agora + aporte_dia) * (metas_h[n]/100)
+                plano.append({"Ativo": n, "Ação": "✅ APORTAR" if vid > va_h else "✋ AGUARDAR", "Valor": f"R$ {max(0, vid-va_h):.2f}"})
+            st.table(pd.DataFrame(plano))
+    
+    st.markdown("---")
+    st.subheader("🏁 Meta de Sobrevivência")
+    custo_v = st.number_input("Custo Mensal (R$):", value=3000.0)
+    renda_p = st.slider("Rendimento Mensal (%)", 0.1, 2.0, 0.8)
+    pat_a = custo_v / (renda_p / 100)
+    st.metric("Patrimônio Alvo", f"R$ {pat_a:,.2f}")
+    st.progress(min((patri_glob/pat_a if pat_a > 0 else 0), 1.0))
+
+    st.subheader("📈 Backtesting de Eficácia")
     at_f = st.selectbox("Simular Ativo:", df_p["Ativo"].unique())
     d_f = df_p[df_p["Ativo"] == at_f].iloc[0]
     p_fundo = d_f['Preço'] * (1 - (abs(d_f['Var_Min'])/100))
-    st.success(f"""**Análise de Eficácia {at_f}:**
-    - Valor Atual: R$ {d_f['Preço']:.2f}
-    - Valor no Fundo (Recorde): R$ {p_fundo:.2f}
-    - Ganho em comprar no pânico: {abs(d_f['Var_Min']):.2f}%""")
+    st.success(f"**Eficácia {at_f}:** Preço Atual: R$ {d_f['Preço']:.2f} | Fundo: R$ {p_fundo:.2f} | Ganho: {abs(d_f['Var_Min']):.2f}%")
 
-# --- ABA 5: CARTEIRA MODELO ---
+# --- ABA 5: CARTEIRA MODELO (TEXTOS INTEGRAIS RESTAURADOS) ---
 with tab_modelo:
-    st.header("🏦 Carteira Modelo Huli")
-    col_a, col_b = st.columns(2)
-    with col_a:
-        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras</b></div>', unsafe_allow_html=True)
-        st.write("**• Energia:** TAEE11, EGIE3, ALUP11\n\n**• Saneamento:** SAPR11, SBSP3\n\n**• Bancos:** BBAS3, ITUB4")
-    with col_b:
-        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida</b></div>', unsafe_allow_html=True)
-        st.write("**• Cripto:** Bitcoin, Ethereum\n\n**• Tech:** Nvidia, Apple")
+    st.header("🏦 Carteira Modelo Huli (Onde o Dinheiro Cresce)")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras (Renda Passiva)</b></div>', unsafe_allow_html=True)
+        st.write("**• Energia:** TAEE11 (Taesa), EGIE3 (Engie), ALUP11 (Alupar)\n\n**• Saneamento:** SAPR11 (Sanepar), SBSP3 (Sabesp)\n\n**• Bancos:** BBAS3 (Banco do Brasil), ITUB4 (Itaú), SANB11 (Santander)\n\n**• Seguradoras:** BBSE3 (BB Seguridade), CXSE3 (Caixa Seguridade)")
+        st.markdown('<div class="huli-category"><b>🏢 Fundos Imobiliários (Renda Mensal)</b></div>', unsafe_allow_html=True)
+        st.write("**• Logística:** HGLG11, XPLG11, BTLG11\n\n**• Shoppings:** XPML11, VISC11, HGBS11")
+    with c2:
+        st.markdown('<div class="huli-category"><b>🐕 Cães de Guarda (Segurança)</b></div>', unsafe_allow_html=True)
+        st.write("**• Ouro:** OZ1D ou ETF GOLD11\n\n**• Dólar:** IVVB11 (S&P 500)\n\n**• Renda Fixa:** Tesouro Selic e CDBs de liquidez diária")
+        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida (Crescimento)</b></div>', unsafe_allow_html=True)
+        st.write("**• Cripto:** Bitcoin (BTC), Ethereum (ETH)\n\n**• Tech:** Nvidia (NVDA), Apple (AAPL)")
 
-# --- ABA 6: MANUAL ---
+# --- ABA 6: MANUAL (TEXTOS INTEGRAIS RESTAURADOS) ---
 with tab_manual:
     st.header("📖 Manual Rockefeller")
-    st.write("Guia completo sobre Graham, LPA/VPA e estratégias de rebalanceamento.")
+    st.markdown("### 🏛️ 1. LPA e VPA")
+    st.markdown('<div class="manual-section">O LPA (Lucro) e VPA (Patrimônio) definem o valor real. Se o DNA é forte, a queda é oportunidade.</div>', unsafe_allow_html=True)
+    st.markdown("### 📊 2. Alertas")
+    st.markdown('<div class="manual-section"><b>✅ COMPRAR:</b> Preço abaixo da média de 30 dias.<br><b>🚨 RECORDE:</b> Preço tocou a mínima do mês.</div>', unsafe_allow_html=True)
