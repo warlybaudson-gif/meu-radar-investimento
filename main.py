@@ -232,53 +232,50 @@ with tab_manual:
     st.markdown("### 3. Gestor de Carteira")
     st.markdown("""<div class="manual-section"><b>Troco:</b> O dinheiro livre na sua conta XP após as compras.</div>""", unsafe_allow_html=True)
 
-# ==================== ADIÇÕES DE HOJE (DNA & BACKTESTING) ====================
-# Estas seções foram adicionadas ao final para preservar a integridade do código anterior.
+# ==================== ADIÇÕES: NOVAS ABAS (DNA & BACKTESTING) ====================
+# Estas abas são adicionadas separadamente ao final conforme solicitado.
 
 st.markdown("---")
-st.header("🧬 Inteligência Adicional: DNA e Backtesting")
-
-# Criação de sub-abas para não poluir o visual
 tab_dna, tab_backtest = st.tabs(["🧬 DNA (LPA/VPA)", "📈 Backtesting de Eficácia"])
 
 with tab_dna:
     st.subheader("🧬 DNA Financeiro: Fundamentos em Tempo Real")
-    st.markdown("""
-    <div class="manual-section">
-    O DNA identifica a saúde da empresa através do <b>LPA (Lucro por Ação)</b> e <b>VPA (Valor Patrimonial por Ação)</b>. 
-    Se o DNA é forte (LPA positivo), as quedas de preço são oportunidades.
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="manual-section">Análise de Lucro (LPA) e Patrimônio (VPA) para validar o valor real das empresas.</div>', unsafe_allow_html=True)
     
-    # Unifica os dataframes para exibir o DNA de todos os ativos monitorados
-    df_dna_completo = pd.concat([df_radar, df_radar_modelo]).drop_duplicates(subset="Ativo")
-    
-    # Prepara a tabela de DNA
-    html_dna = f"""<div class="mobile-table-container"><table class="rockefeller-table">
+    df_dna_total = pd.concat([df_radar, df_radar_modelo]).drop_duplicates(subset="Ativo")
+    html_dna = """<div class="mobile-table-container"><table class="rockefeller-table">
         <thead><tr><th>Ativo</th><th>LPA (Lucro)</th><th>VPA (Patrimônio)</th><th>P/L</th><th>P/VP</th></tr></thead>
-        <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{float(yf.Ticker(r['Ticker_Raw']).info.get('trailingEps', 0)):.2f}</td><td>{float(yf.Ticker(r['Ticker_Raw']).info.get('trailingEps', 0)):.2f}</td><td>{(float(r['V_Cru'])/float(yf.Ticker(r['Ticker_Raw']).info.get('trailingEps', 1)) if float(yf.Ticker(r['Ticker_Raw']).info.get('trailingEps', 0)) > 0 else 0):.2f}</td><td>{(float(r['V_Cru'])/float(yf.Ticker(r['Ticker_Raw']).info.get('bookValue', 1)) if float(yf.Ticker(r['Ticker_Raw']).info.get('bookValue', 0)) > 0 else 0):.2f}</td></tr>" for _, r in df_dna_completo.iterrows()])}</tbody>
-    </table></div>"""
+        <tbody>"""
+    
+    for _, r in df_dna_total.iterrows():
+        try:
+            info = yf.Ticker(r['Ticker_Raw']).info
+            lpa = float(info.get('trailingEps', 0))
+            vpa = float(info.get('bookValue', 0))
+            preco = float(r['V_Cru'])
+            pl = preco / lpa if lpa > 0 else 0
+            pvp = preco / vpa if vpa > 0 else 0
+            html_dna += f"<tr><td>{r['Ativo']}</td><td>{lpa:.2f}</td><td>{vpa:.2f}</td><td>{pl:.2f}</td><td>{pvp:.2f}</td></tr>"
+        except: continue
+    
+    html_dna += "</tbody></table></div>"
     st.markdown(html_dna, unsafe_allow_html=True)
 
 with tab_backtest:
-    st.subheader("📈 Backtesting de Pânico (Eficácia do Método)")
-    st.markdown("""
-    <div class="manual-section">
-    Simulação de quanto você teria ganho se tivesse aproveitado o sinal de <b>RECORDE</b> (fundo do mês) em comparação ao preço de hoje.
-    </div>
-    """, unsafe_allow_html=True)
+    st.subheader("📈 Backtesting de Eficácia (Sinal de Pânico)")
+    st.markdown('<div class="manual-section">Simulação de ganho real ao comprar no sinal de RECORDE (fundo do mês) vs Hoje.</div>', unsafe_allow_html=True)
     
     if not df_radar.empty:
-        ativo_sim = st.selectbox("Selecione um ativo para testar a eficácia:", df_radar["Ativo"].unique())
-        dados_sim = df_radar[df_radar["Ativo"] == ativo_sim].iloc[0]
+        ativo_sim = st.selectbox("Escolha um ativo para testar a estratégia:", df_radar["Ativo"].unique(), key="bt_sim")
+        d_sim = df_radar[df_radar["Ativo"] == ativo_sim].iloc[0]
         
-        # Cálculo de eficácia baseado na mínima (Var_Min)
-        preco_fundo = dados_sim["V_Cru"] / (1 + (abs(dados_sim["Var_Min"])/100))
-        ganho_recuperacao = abs(dados_sim["Var_Min"])
+        preco_atual = float(d_sim["V_Cru"])
+        queda_max = abs(float(d_sim["Var_Min"]))
+        preco_fundo = preco_atual / (1 + (queda_max/100))
         
-        c_bt1, c_bt2, c_bt3 = st.columns(3)
-        c_bt1.metric("Preço no Fundo (Mês)", f"R$ {preco_fundo:.2f}")
-        c_bt2.metric("Preço Agora", f"R$ {dados_sim['V_Cru']:.2f}")
-        c_bt3.metric("Eficácia de Compra", f"{ganho_recuperacao:.2f}%", delta=f"{ganho_recuperacao:.2f}%")
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Preço no Fundo", f"R$ {preco_fundo:.2f}")
+        c2.metric("Preço Agora", f"R$ {preco_atual:.2f}")
+        c3.metric("Eficácia do Aporte", f"{queda_max:.2f}%", delta=f"{queda_max:.2f}%")
         
-        st.success(f"📌 **Resultado do Backtest:** Se você comprou **{ativo_sim}** no sinal de fundo do mês, seu patrimônio neste ativo valorizou **{ganho_recuperacao:.2f}%** até o momento.")
+        st.success(f"📌 **Prova Real:** Comprar **{ativo_sim}** no pânico gerou **{queda_max:.2f}%** de valorização até hoje.")
