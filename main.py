@@ -25,7 +25,7 @@ st.markdown("""
 
 st.title("💰 IA Rockefeller")
 
-# CRIAÇÃO DAS ABAS
+# CRIAÇÃO DAS ABAS (MANTIDAS AS ORIGINAIS)
 tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_manual = st.tabs([
     "📊 Painel de Controle", 
     "🔍 Radar Carteira Modelo",
@@ -154,7 +154,7 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
 
-# ==================== ABA 2: RADAR CARTEIRA MODELO (IGUAL AO PAINEL) ====================
+# ==================== ABA 2: RADAR CARTEIRA MODELO ====================
 with tab_radar_modelo:
     st.subheader("🛰️ Radar de Ativos: Carteira Modelo Tio Huli")
     html_radar_m = f"""<div class="mobile-table-container"><table class="rockefeller-table">
@@ -173,7 +173,7 @@ with tab_radar_modelo:
     score_m = (caros_m / len(df_radar_modelo)) * 100 if len(df_radar_modelo) > 0 else 0
     st.progress(score_m / 100); st.write(f"Índice de Sobrepreço: **{int(score_m)}%**")
 
-# ==================== ABA 3: ESTRATÉGIA HULI (RESTAURADA) ====================
+# ==================== ABA 3: ESTRATÉGIA HULI ====================
 with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
     valor_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, value=0.0, step=100.0)
@@ -198,7 +198,7 @@ with tab_huli:
             with col_m2: st.metric("Patrimônio Alvo", f"R$ {pat_nec:,.2f}")
             st.write(f"Você já percorreu **{prog:.1f}%** do caminho!"); st.progress(min(prog/100, 1.0))
 
-# ==================== ABA 4: CARTEIRA MODELO HULI (INTEGRAL ORIGINAL) ====================
+# ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
     st.write("Esta é a base de ativos que compõe o método dele para proteção e renda.")
@@ -218,7 +218,7 @@ with tab_modelo:
         st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida (Crescimento)</b><br><small>Aposta no futuro e multiplicação</small></div>', unsafe_allow_html=True)
         st.write("**• Cripto:** Bitcoin (BTC) e Ethereum (ETH) | **• Tech:** Nvidia (NVDA), Apple (AAPL)")
 
-# ==================== ABA 5: MANUAL DIDÁTICO (INTEGRAL ORIGINAL) ====================
+# ==================== ABA 5: MANUAL DIDÁTICO ====================
 with tab_manual:
     st.header("📖 Guia de Operação - Sistema Rockefeller")
     st.markdown("### 1. Radar de Ativos (Inteligência de Preço)")
@@ -232,50 +232,41 @@ with tab_manual:
     st.markdown("### 3. Gestor de Carteira")
     st.markdown("""<div class="manual-section"><b>Troco:</b> O dinheiro livre na sua conta XP após as compras.</div>""", unsafe_allow_html=True)
 
-# ==================== ADIÇÕES: NOVAS ABAS (DNA & BACKTESTING) ====================
-# Estas abas são adicionadas separadamente ao final conforme solicitado.
+# ==================== ADIÇÃO DE HOJE: ABAS SEPARADAS AO FINAL ====================
 
 st.markdown("---")
-tab_dna, tab_backtest = st.tabs(["🧬 DNA (LPA/VPA)", "📈 Backtesting de Eficácia"])
 
-with tab_dna:
-    st.subheader("🧬 DNA Financeiro: Fundamentos em Tempo Real")
-    st.markdown('<div class="manual-section">Análise de Lucro (LPA) e Patrimônio (VPA) para validar o valor real das empresas.</div>', unsafe_allow_html=True)
-    
+# ABA 6: DNA FINANCEIRO (ABAIXO DO MANUAL)
+st.subheader("🧬 DNA dos Ativos")
+tab_dna_exclusiva = st.tabs(["🧬 DNA Financeiro (LPA/VPA)"])[0]
+with tab_dna_exclusiva:
+    st.markdown('<div class="manual-section">Análise de Lucro e Patrimônio Real.</div>', unsafe_allow_html=True)
     df_dna_total = pd.concat([df_radar, df_radar_modelo]).drop_duplicates(subset="Ativo")
     html_dna = """<div class="mobile-table-container"><table class="rockefeller-table">
-        <thead><tr><th>Ativo</th><th>LPA (Lucro)</th><th>VPA (Patrimônio)</th><th>P/L</th><th>P/VP</th></tr></thead>
-        <tbody>"""
-    
+        <thead><tr><th>Ativo</th><th>LPA (Lucro)</th><th>VPA (Patrimônio)</th><th>P/L</th><th>P/VP</th></tr></thead><tbody>"""
     for _, r in df_dna_total.iterrows():
         try:
             info = yf.Ticker(r['Ticker_Raw']).info
             lpa = float(info.get('trailingEps', 0))
             vpa = float(info.get('bookValue', 0))
             preco = float(r['V_Cru'])
-            pl = preco / lpa if lpa > 0 else 0
-            pvp = preco / vpa if vpa > 0 else 0
-            html_dna += f"<tr><td>{r['Ativo']}</td><td>{lpa:.2f}</td><td>{vpa:.2f}</td><td>{pl:.2f}</td><td>{pvp:.2f}</td></tr>"
+            html_dna += f"<tr><td>{r['Ativo']}</td><td>{lpa:.2f}</td><td>{vpa:.2f}</td><td>{(preco/lpa if lpa>0 else 0):.2f}</td><td>{(preco/vpa if vpa>0 else 0):.2f}</td></tr>"
         except: continue
-    
     html_dna += "</tbody></table></div>"
     st.markdown(html_dna, unsafe_allow_html=True)
 
-with tab_backtest:
-    st.subheader("📈 Backtesting de Eficácia (Sinal de Pânico)")
-    st.markdown('<div class="manual-section">Simulação de ganho real ao comprar no sinal de RECORDE (fundo do mês) vs Hoje.</div>', unsafe_allow_html=True)
-    
+# ABA 7: BACKTESTING (ABAIXO DO DNA)
+st.subheader("📈 Validação do Método")
+tab_bt_exclusiva = st.tabs(["📈 Backtesting de Eficácia"])[0]
+with tab_bt_exclusiva:
+    st.markdown('<div class="manual-section">Simulação de compra no fundo do mês.</div>', unsafe_allow_html=True)
     if not df_radar.empty:
-        ativo_sim = st.selectbox("Escolha um ativo para testar a estratégia:", df_radar["Ativo"].unique(), key="bt_sim")
+        ativo_sim = st.selectbox("Escolha um ativo para testar:", df_radar["Ativo"].unique(), key="bt_final")
         d_sim = df_radar[df_radar["Ativo"] == ativo_sim].iloc[0]
-        
-        preco_atual = float(d_sim["V_Cru"])
-        queda_max = abs(float(d_sim["Var_Min"]))
-        preco_fundo = preco_atual / (1 + (queda_max/100))
-        
+        p_atual = float(d_sim["V_Cru"])
+        queda = abs(float(d_sim["Var_Min"]))
+        p_fundo = p_atual / (1 + (queda/100))
         c1, c2, c3 = st.columns(3)
-        c1.metric("Preço no Fundo", f"R$ {preco_fundo:.2f}")
-        c2.metric("Preço Agora", f"R$ {preco_atual:.2f}")
-        c3.metric("Eficácia do Aporte", f"{queda_max:.2f}%", delta=f"{queda_max:.2f}%")
-        
-        st.success(f"📌 **Prova Real:** Comprar **{ativo_sim}** no pânico gerou **{queda_max:.2f}%** de valorização até hoje.")
+        c1.metric("Preço no Fundo", f"R$ {p_fundo:.2f}")
+        c2.metric("Preço Hoje", f"R$ {p_atual:.2f}")
+        c3.metric("Recuperação", f"{queda:.2f}%", delta=f"{queda:.2f}%")
