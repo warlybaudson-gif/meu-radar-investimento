@@ -87,6 +87,7 @@ def calcular_dados(lista):
 df_radar = calcular_dados(tickers_map)
 df_radar_modelo = calcular_dados(modelo_huli_tickers)
 if 'carteira' not in st.session_state: st.session_state.carteira = {}
+if 'carteira_modelo' not in st.session_state: st.session_state.carteira_modelo = {}
 
 # ==================== ABA 1: PAINEL DE CONTROLE ====================
 with tab_painel:
@@ -156,7 +157,7 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
 
-# ==================== ABA 2: RADAR CARTEIRA MODELO ====================
+# ==================== ABA 2: RADAR CARTEIRA MODELO (COM ADIÇÕES SOLICITADAS) ====================
 with tab_radar_modelo:
     st.subheader("🛰️ Radar de Ativos: Carteira Modelo Tio Huli")
     html_radar_m = f"""<div class="mobile-table-container"><table class="rockefeller-table">
@@ -164,6 +165,63 @@ with tab_radar_modelo:
         <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar_modelo.iterrows()])}</tbody>
     </table></div>"""
     st.markdown(html_radar_m, unsafe_allow_html=True)
+
+    # ADIÇÃO: RAIO-X DE VOLATILIDADE
+    st.subheader("📊 Raio-X de Volatilidade (Ativos Modelo)")
+    html_vol_m = f"""<div class="mobile-table-container"><table class="rockefeller-table">
+        <thead><tr><th>Ativo</th><th>Dias A/B</th><th>Pico</th><th>Fundo</th><th>Alerta</th></tr></thead>
+        <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>🟢{r['Dias_A']}/🔴{r['Dias_B']}</td><td>+{r['Var_Max']:.2f}%</td><td>{r['Var_Min']:.2f}%</td><td>{'🚨 RECORDE' if r['Var_H'] <= (r['Var_Min']*0.98) and r['Var_H'] < 0 else 'Normal'}</td></tr>" for _, r in df_radar_modelo.iterrows()])}</tbody>
+    </table></div>"""
+    st.markdown(html_vol_m, unsafe_allow_html=True)
+
+    # ADIÇÃO: SENTIMENTO DE MERCADO
+    st.subheader("🌡️ Sentimento de Mercado (Modelo)")
+    caros_m = len(df_radar_modelo[df_radar_modelo['Status M'] == "❌ SOBREPREÇO"])
+    score_m = (caros_m / len(df_radar_modelo)) * 100 if len(df_radar_modelo) > 0 else 0
+    st.progress(score_m / 100)
+    st.write(f"Índice de Sobrepreço Modelo: **{int(score_m)}%**")
+
+    st.markdown("---")
+    # ADIÇÃO: GESTOR DE CARTEIRA DINÂMICA
+    st.subheader("🧮 Gestor de Carteira: Ativos Modelo")
+    capital_xp_m = st.number_input("💰 Capital na Corretora para Ativos Modelo (R$):", min_value=0.0, value=0.0, step=100.0, key="cap_huli")
+    ativos_sel_m = st.multiselect("Habilite ativos da Carteira Modelo:", df_radar_modelo["Ativo"].unique(), key="sel_huli")
+    
+    total_investido_acum_m, v_ativos_atual_m = 0, 0
+    lista_c_m, df_grafico_m = [], pd.DataFrame()
+    if ativos_sel_m:
+        cols_m = st.columns(2)
+        for i, nome in enumerate(ativos_sel_m):
+            with cols_m[i % 2]:
+                st.markdown(f"**{nome}**")
+                qtd_m = st.number_input(f"Qtd Cotas ({nome}):", min_value=0, key=f"q_m_{nome}")
+                investido_m = st.number_input(f"Total Investido R$ ({nome}):", min_value=0.0, key=f"i_m_{nome}")
+                info_m = df_radar_modelo[df_radar_modelo["Ativo"] == nome].iloc[0]
+                p_atual_m = info_m["V_Cru"]
+                pm_calc_m = investido_m / qtd_m if qtd_m > 0 else 0.0
+                v_agora_m = qtd_m * p_atual_m
+                total_investido_acum_m += investido_m
+                v_ativos_atual_m += v_agora_m
+                st.session_state.carteira_modelo[nome] = {"atual": v_agora_m}
+                lista_c_m.append({"Ativo": nome, "Qtd": qtd_m, "PM": f"{pm_calc_m:.2f}", "Total": f"{v_agora_m:.2f}", "Lucro": f"{(v_agora_m - investido_m):.2f}"})
+                df_grafico_m[nome] = yf.Ticker(info_m["Ticker_Raw"]).history(period="30d")['Close']
+        
+        troco_real_m = capital_xp_m - total_investido_acum_m
+        st.markdown(f"""<div class="mobile-table-container"><table class="rockefeller-table">
+            <thead><tr><th>Ativo</th><th>Qtd</th><th>PM</th><th>Valor Atual</th><th>Lucro/Prej</th></tr></thead>
+            <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>R$ {r['PM']}</td><td>R$ {r['Total']}</td><td>{r['Lucro']}</td></tr>" for r in lista_c_m])}</tbody>
+        </table></div>""", unsafe_allow_html=True)
+
+        # ADIÇÃO: PATRIMÔNIO GLOBAL E GRÁFICO DE BARRAS
+        st.subheader("💰 Patrimônio Global (Estratégia Modelo)")
+        patri_global_m = v_ativos_atual_m + troco_real_m
+        m1_m, m2_m = st.columns(2)
+        m1_m.metric("Total em Ativos Modelo", f"R$ {v_ativos_atual_m:,.2f}")
+        m2_m.metric("PATRIMÔNIO MODELO TOTAL", f"R$ {patri_global_m:,.2f}")
+        
+        # Gráfico de Barras para composição da carteira modelo
+        if not df_grafico_m.empty:
+            st.bar_chart(df_grafico_m.iloc[-1])
 
 # ==================== ABA 3: ESTRATÉGIA HULI ====================
 with tab_huli:
@@ -213,7 +271,7 @@ with tab_dna:
     html_dna += "</tbody></table></div>"
     st.markdown(html_dna, unsafe_allow_html=True)
 
-# ==================== ABA 6: BACKTESTING (ADICIONADO ITEM DE RENTABILIDADE) ====================
+# ==================== ABA 6: BACKTESTING ====================
 with tab_backtest:
     st.header("📈 Backtesting de Oportunidade")
     if not df_radar.empty:
@@ -222,28 +280,26 @@ with tab_backtest:
         p_atual = float(d["V_Cru"])
         queda_max = abs(float(d["Var_Min"]))
         preco_fundo = p_atual / (1 + (queda_max/100))
-        
         st.markdown(f"### 🛡️ Simulação: Compra no Fundo vs Hoje")
         c1, c2, c3 = st.columns(3)
         c1.metric("Preço de Compra (Fundo)", f"R$ {preco_fundo:.2f}")
         c2.metric("Preço de Venda (Hoje)", f"R$ {p_atual:.2f}")
         c3.metric("Rendimento Realizado", f"{queda_max:.2f}%", delta=f"{queda_max:.2f}%")
-        
         st.success(f"📌 **Resultado:** Se você tivesse investido no momento de pânico deste mês em **{ativo_bt}**, teria lucrado **{queda_max:.2f}%** até o preço atual.")
 
-# ==================== ABA 7: MANUAL DE INSTRUÇÕES (EXPANDIDO) ====================
+# ==================== ABA 7: MANUAL DE INSTRUÇÕES ====================
 with tab_manual:
     st.header("📖 Manual de Instruções - IA Rockefeller")
     with st.expander("🛰️ Radar de Ativos e Preço Justo", expanded=True):
         st.markdown("""
         * **Preço Justo (Graham):** Calculado pela fórmula $V = \sqrt{22.5 \cdot LPA \cdot VPA}$. Indica o valor intrínseco do ativo.
         * **Status Descontado:** Ocorre quando o preço de mercado é inferior ao Preço Justo.
-        * **Ação COMPRAR:** Recomendada apenas quando o ativo está abaixo da média de 30 dias (oportunidade técnica) e abaixo do preço justo (oportunidade fundamentalista).
+        * **Ação COMPRAR:** Recomendada apenas quando o ativo está abaixo da média de 30 dias e abaixo do preço justo.
         """)
     with st.expander("📊 Raio-X de Volatilidade"):
         st.markdown("""
         * **Dias A/B:** Quantidade de dias de Alta (Verde) e Baixa (Vermelho) no último mês.
-        * **🚨 Alerta RECORDE:** Dispara quando o preço atual toca ou cai abaixo da mínima histórica dos últimos 30 dias. É o sinal de 'Pânico' para compras agressivas.
+        * **🚨 Alerta RECORDE:** Dispara quando o preço atual toca ou cai abaixo da mínima histórica dos últimos 30 dias.
         """)
     with st.expander("🧬 DNA Financeiro"):
         st.markdown("""
@@ -253,5 +309,5 @@ with tab_manual:
         """)
     with st.expander("📈 Backtesting"):
         st.markdown("""
-        Esta aba prova a eficácia da estratégia. Ela localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse tido a disciplina de comprar naquele momento de queda máxima.
+        Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
