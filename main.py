@@ -157,7 +157,7 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
 
-# ==================== ABA 2: RADAR CARTEIRA MODELO (COM ADIÇÕES SOLICITADAS) ====================
+# ==================== ABA 2: RADAR CARTEIRA MODELO ====================
 with tab_radar_modelo:
     st.subheader("🛰️ Radar de Ativos: Carteira Modelo Tio Huli")
     html_radar_m = f"""<div class="mobile-table-container"><table class="rockefeller-table">
@@ -188,7 +188,8 @@ with tab_radar_modelo:
     ativos_sel_m = st.multiselect("Habilite ativos da Carteira Modelo:", df_radar_modelo["Ativo"].unique(), key="sel_huli")
     
     total_investido_acum_m, v_ativos_atual_m = 0, 0
-    lista_c_m, df_grafico_m = [], pd.DataFrame()
+    lista_c_m, nomes_grafico, valores_grafico = [], [], []
+    
     if ativos_sel_m:
         cols_m = st.columns(2)
         for i, nome in enumerate(ativos_sel_m):
@@ -202,9 +203,12 @@ with tab_radar_modelo:
                 v_agora_m = qtd_m * p_atual_m
                 total_investido_acum_m += investido_m
                 v_ativos_atual_m += v_agora_m
+                
+                nomes_grafico.append(nome)
+                valores_grafico.append(v_agora_m)
+                
                 st.session_state.carteira_modelo[nome] = {"atual": v_agora_m}
                 lista_c_m.append({"Ativo": nome, "Qtd": qtd_m, "PM": f"{pm_calc_m:.2f}", "Total": f"{v_agora_m:.2f}", "Lucro": f"{(v_agora_m - investido_m):.2f}"})
-                df_grafico_m[nome] = yf.Ticker(info_m["Ticker_Raw"]).history(period="30d")['Close']
         
         troco_real_m = capital_xp_m - total_investido_acum_m
         st.markdown(f"""<div class="mobile-table-container"><table class="rockefeller-table">
@@ -212,16 +216,19 @@ with tab_radar_modelo:
             <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>R$ {r['PM']}</td><td>R$ {r['Total']}</td><td>{r['Lucro']}</td></tr>" for r in lista_c_m])}</tbody>
         </table></div>""", unsafe_allow_html=True)
 
-        # ADIÇÃO: PATRIMÔNIO GLOBAL E GRÁFICO DE BARRAS
+        # ADIÇÃO: PATRIMÔNIO GLOBAL (MODELO)
         st.subheader("💰 Patrimônio Global (Estratégia Modelo)")
-        patri_global_m = v_ativos_atual_m + troco_real_m
-        m1_m, m2_m = st.columns(2)
-        m1_m.metric("Total em Ativos Modelo", f"R$ {v_ativos_atual_m:,.2f}")
-        m2_m.metric("PATRIMÔNIO MODELO TOTAL", f"R$ {patri_global_m:,.2f}")
-        
-        # Gráfico de Barras para composição da carteira modelo
-        if not df_grafico_m.empty:
-            st.bar_chart(df_grafico_m.iloc[-1])
+        patri_total_modelo = v_ativos_atual_m + troco_real_m
+        col_m1, col_m2, col_m3 = st.columns(3)
+        col_m1.metric("Bolsa (Modelo)", f"R$ {v_ativos_atual_m:,.2f}")
+        col_m2.metric("Saldo em Caixa", f"R$ {troco_real_m:,.2f}")
+        col_m3.metric("PATRIMÔNIO MODELO TOTAL", f"R$ {patri_total_modelo:,.2f}")
+
+        # ADIÇÃO: GRÁFICO DE BARRAS
+        st.subheader("📊 Composição da Carteira Modelo")
+        if nomes_grafico:
+            df_bar_m = pd.DataFrame({"Ativo": nomes_grafico, "Valor Total (R$)": valores_grafico})
+            st.bar_chart(df_bar_m.set_index("Ativo"))
 
 # ==================== ABA 3: ESTRATÉGIA HULI ====================
 with tab_huli:
@@ -232,13 +239,13 @@ with tab_huli:
         if sum(metas.values()) == 100:
             plano = []
             for nome in ativos_sel:
-                v_at = st.session_state.carteira[nome]["atual"]
+                v_at = st.session_state.carteira[nome]["atual"] if nome in st.session_state.carteira else 0
                 v_id = (v_ativos_atualizado + valor_aporte) * (metas[nome] / 100)
                 nec = v_id - v_at
                 plano.append({"Ativo": nome, "Ação": "APORTAR" if nec > 0 else "AGUARDAR", "Valor": f"R$ {max(0, nec):.2f}"})
             st.table(pd.DataFrame(plano))
 
-# ==================== ABA 4: CARTEIRA MODELO HULI (RESTAURADO INTEGRAL) ====================
+# ==================== ABA 4: CARTEIRA MODELO HULI (INTEGRAL) ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
     st.write("Esta é a base de ativos que compõe o método dele para proteção e renda.")
