@@ -75,7 +75,7 @@ def calcular_dados(lista):
                 status_m = "✅ DESCONTADO" if p_atual < p_justo else "❌ SOBREPREÇO"
                 variacoes = hist['Close'].pct_change() * 100
                 
-                # ADIÇÃO DA LÓGICA VENDER
+                # ADIÇÃO SOLICITADA: LÓGICA DE DECISÃO REFORÇADA
                 if p_atual < m_30 and status_m == "✅ DESCONTADO": 
                     acao = "✅ COMPRAR"
                 elif p_atual > p_justo * 1.2: 
@@ -155,7 +155,12 @@ with tab_painel:
             g_joias = st.number_input("Ouro Físico (gramas):", min_value=0.0, value=0.0)
             v_bens = st.number_input("Outros Bens/Imóveis (R$):", min_value=0.0, value=0.0)
 
-        p_ouro = float(df_radar[df_radar['Ativo'] == "Jóias (Ouro)"]['V_Cru'].values[0])
+        # Prevenção de erro caso Jóias não carregue
+        try:
+            p_ouro = float(df_radar[df_radar['Ativo'] == "Jóias (Ouro)"]['V_Cru'].values[0])
+        except:
+            p_ouro = 0
+        
         valor_ouro_total = g_joias * p_ouro
         patri_global = v_ativos_atualizado + troco_real + valor_ouro_total + v_bens
 
@@ -163,7 +168,8 @@ with tab_painel:
         m1.metric("Bolsa/Criptos", f"R$ {v_ativos_atualizado:,.2f}")
         m2.metric("Troco (XP) + Bens", f"R$ {(troco_real + valor_ouro_total + v_bens):,.2f}")
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
-        st.line_chart(df_grafico)
+        if not df_grafico.empty:
+            st.line_chart(df_grafico)
 
 # ==================== ABA 2: RADAR CARTEIRA MODELO ====================
 with tab_radar_modelo:
@@ -209,7 +215,7 @@ with tab_radar_modelo:
                 v_ativos_atual_m += v_agora_m
                 st.session_state.carteira_modelo[nome] = {"atual": v_agora_m}
                 lista_c_m.append({"Ativo": nome, "Qtd": qtd_m, "PM": f"{pm_calc_m:.2f}", "Total": f"{v_agora_m:.2f}", "Lucro": f"{(v_agora_m - investido_m):.2f}"})
-                df_grafico_m[nome] = yf.Ticker(info_m["Ticker_Raw"]).history(period="30d")['Close']
+                df_grafico_m[nome] = [v_agora_m] # Dados para o gráfico de barras
         
         troco_real_m = capital_xp_m - total_investido_acum_m
         st.markdown(f"""<div class="mobile-table-container"><table class="rockefeller-table">
@@ -223,9 +229,9 @@ with tab_radar_modelo:
         m1_m.metric("Total em Ativos Modelo", f"R$ {v_ativos_atual_m:,.2f}")
         m2_m.metric("PATRIMÔNIO MODELO TOTAL", f"R$ {patri_global_m:,.2f}")
         
-        # CORREÇÃO DO GRÁFICO (SÓ EXIBE SE HOUVER DADOS)
-        if not df_grafico_m.empty:
-            st.bar_chart(df_grafico_m.iloc[-1])
+        # CORREÇÃO DO ERRO NO FINAL DA ABA: Só exibe se houver ativos com valor
+        if not df_grafico_m.empty and v_ativos_atual_m > 0:
+            st.bar_chart(df_grafico_m.T)
 
 # ==================== ABA 3: ESTRATÉGIA HULI ====================
 with tab_huli:
@@ -236,7 +242,8 @@ with tab_huli:
         if sum(metas.values()) == 100:
             plano = []
             for nome in ativos_sel:
-                v_at = st.session_state.carteira[nome]["atual"]
+                # Verificação para evitar erro de chave inexistente
+                v_at = st.session_state.carteira.get(nome, {"atual": 0})["atual"]
                 v_id = (v_ativos_atualizado + valor_aporte) * (metas[nome] / 100)
                 nec = v_id - v_at
                 plano.append({"Ativo": nome, "Ação": "APORTAR" if nec > 0 else "AGUARDAR", "Valor": f"R$ {max(0, nec):.2f}"})
