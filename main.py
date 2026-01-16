@@ -124,8 +124,8 @@ if 'carteira_modelo' not in st.session_state: st.session_state.carteira_modelo =
 with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
     html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Status Mercado</th><th>Ação</th></tr></thead>
-        <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar.iterrows()])}</tbody>
+        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Dividendos (DY)</th><th>Status Mercado</th><th>Ação</th></tr></thead>
+        <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['DY']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar.iterrows()])}</tbody>
     </table></div>"""
     st.markdown(html_radar, unsafe_allow_html=True)
     
@@ -192,8 +192,8 @@ with tab_painel:
 with tab_radar_modelo:
     st.subheader("🛰️ Radar de Ativos: Carteira Modelo Tio Huli")
     html_radar_m = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Status Mercado</th><th>Ação</th></tr></thead>
-        <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar_modelo.iterrows()])}</tbody>
+        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Dividendos (DY)</th><th>Status Mercado</th><th>Ação</th></tr></thead>
+        <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['DY']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar_modelo.iterrows()])}</tbody>
     </table></div>"""
     st.markdown(html_radar_m, unsafe_allow_html=True)
 
@@ -341,6 +341,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
