@@ -47,7 +47,12 @@ modelo_huli_tickers = {
     "TAESA": "TAEE11.SA", "ENGIE": "EGIE3.SA", "ALUPAR": "ALUP11.SA",
     "SANEPAR": "SAPR11.SA", "SABESP": "SBSP3.SA", "BANCO DO BRASIL": "BBAS3.SA",
     "ITAÚ": "ITUB4.SA", "BB SEGURIDADE": "BBSE3.SA", "HGLG11": "HGLG11.SA",
-    "XPML11": "XPML11.SA", "IVVB11": "IVVB11.SA", "APPLE": "AAPL"
+    "XPML11": "XPML11.SA", "IVVB11": "IVVB11.SA", "APPLE": "AAPL",
+    # ADIÇÕES DE VAREJO (COTAS BARATAS/DIVIDENDOS)
+    "RENNER": "LREN3.SA",
+    "GRENDENE": "GRND3.SA",
+    "MATEUS": "GMAT3.SA",
+    "VISC11": "VISC11.SA"
 }
 
 try:
@@ -318,3 +323,4 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
