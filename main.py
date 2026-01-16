@@ -36,24 +36,26 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
     "📖 Manual de Instruções"
 ])
 
-# --- PROCESSAMENTO DE DADOS (INTEGRAL ORIGINAL) ---
-tickers_map = {
-    "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
-    "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
-    "Nióbio": "NGLOY", "Grafeno": "FGPHF", "Câmbio USD/BRL": "USDBRL=X"
-}
+# --- PROCESSAMENTO DE DADOS (DICIONÁRIOS UNIFICADOS) ---
 
+# Esta é a lista da ABA 2 (agora com varejo)
 modelo_huli_tickers = {
     "TAESA": "TAEE11.SA", "ENGIE": "EGIE3.SA", "ALUPAR": "ALUP11.SA",
     "SANEPAR": "SAPR11.SA", "SABESP": "SBSP3.SA", "BANCO DO BRASIL": "BBAS3.SA",
     "ITAÚ": "ITUB4.SA", "BB SEGURIDADE": "BBSE3.SA", "HGLG11": "HGLG11.SA",
     "XPML11": "XPML11.SA", "IVVB11": "IVVB11.SA", "APPLE": "AAPL",
-    # ADIÇÕES DE VAREJO (COTAS BARATAS/DIVIDENDOS)
-    "RENNER": "LREN3.SA",
-    "GRENDENE": "GRND3.SA",
-    "MATEUS": "GMAT3.SA",
-    "VISC11": "VISC11.SA"
+    "RENNER": "LREN3.SA", "GRENDENE": "GRND3.SA", "MATEUS": "GMAT3.SA", "VISC11": "VISC11.SA"
 }
+
+# Estes são os ativos que eram exclusivos da ABA 1
+ativos_estrategicos = {
+    "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
+    "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
+    "Nióbio": "NGLOY", "Grafeno": "FGPHF", "Câmbio USD/BRL": "USDBRL=X"
+}
+
+# UNIFICAÇÃO: Aqui dizemos que a ABA 1 (tickers_map) deve mostrar TUDO
+tickers_map = {**ativos_estrategicos, **modelo_huli_tickers}
 
 try:
     cambio_hoje = yf.Ticker("USDBRL=X").history(period="1d")['Close'].iloc[-1]
@@ -323,4 +325,5 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
