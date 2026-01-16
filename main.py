@@ -91,7 +91,7 @@ def calcular_dados(lista):
                 status_m = "✅ DESCONTADO" if p_atual < p_justo else "❌ SOBREPREÇO"
                 variacoes = hist['Close'].pct_change() * 100
                 
-                # Lógica de Decisão
+                # ADIÇÃO SOLICITADA: Lógica de Decisão
                 if p_atual < m_30 and status_m == "✅ DESCONTADO": acao = "✅ COMPRAR"
                 elif p_atual > p_justo * 1.2: acao = "🛑 VENDER"
                 else: acao = "⚠️ ESPERAR"
@@ -115,6 +115,7 @@ if 'carteira' not in st.session_state:
 # ==================== ABA 1: PAINEL DE CONTROLE ====================
 with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
+    # ADIÇÃO SOLICITADA: Colunas Status (C/B) e Decisão
     html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
         <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>DY</th><th>Preço Justo</th><th>Status (C/B)</th><th>Decisão</th></tr></thead>
         <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td style='color:#00ff00'>{r['DY']}</td><td>{r['Justo']}</td><td style='color:{'#00ff00' if r['Status M'] == '✅ DESCONTADO' else '#ff4b4b'}'>{'BARATO' if r['Status M'] == '✅ DESCONTADO' else 'CARO'}</td><td style='font-weight:bold; color:{'#00ff00' if r['Ação'] == '✅ COMPRAR' else '#ff4b4b' if r['Ação'] == '🛑 VENDER' else '#f1c40f'}'>{r['Ação'].replace('✅ ', '').replace('🛑 ', '').replace('⚠️ ', '')}</td></tr>" for _, r in df_radar.iterrows()])}</tbody>
