@@ -80,9 +80,9 @@ def calcular_dados(lista):
             info = ativo.info
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
-                # Puxa o Yield (Rendimento)
+                # Puxa o Yield e arredonda para número inteiro
                 dy = info.get('dividendYield', 0) 
-                dy_formata = dy * 100 if dy else 0.0
+                dy_formata = int(dy * 100) if dy else 0
 
                 if t in ["NVDA", "GC=F", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]:
                     p_atual = (p_atual / 31.1035) * cambio_hoje if t == "GC=F" else p_atual * cambio_hoje
@@ -107,14 +107,13 @@ def calcular_dados(lista):
 
                 res.append({
                     "Ativo": nome_ex, "Ticker_Raw": t, "Preço": f"{p_atual:.2f}", "Justo": f"{p_justo:.2f}",
-                    "DY": f"{dy_formata:.2f}%", # Nova coluna de Dividendos
+                    "DY": f"{dy_formata}%", # Exibe apenas o número inteiro
                     "Status M": status_m, "Ação": acao, "V_Cru": p_atual, "Var_Min": variacoes.min(),
                     "Var_Max": variacoes.max(), "Dias_A": (variacoes > 0).sum(), "Dias_B": (variacoes < 0).sum(),
                     "Var_H": variacoes.iloc[-1], "LPA": lpa, "VPA": vpa
                 })
         except: continue
     return pd.DataFrame(res)
-
 df_radar = calcular_dados(tickers_map)
 df_radar_modelo = calcular_dados(modelo_huli_tickers)
 if 'carteira' not in st.session_state: st.session_state.carteira = {}
@@ -124,7 +123,7 @@ if 'carteira_modelo' not in st.session_state: st.session_state.carteira_modelo =
 with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
     html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Dividendos (DY)</th><th>Status Mercado</th><th>Ação</th></tr></thead>
+        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Div. Anual</th><th>Status Mercado</th><th>Ação</th></tr></thead>
         <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['DY']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar.iterrows()])}</tbody>
     </table></div>"""
     st.markdown(html_radar, unsafe_allow_html=True)
@@ -192,7 +191,7 @@ with tab_painel:
 with tab_radar_modelo:
     st.subheader("🛰️ Radar de Ativos: Carteira Modelo Tio Huli")
     html_radar_m = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Dividendos (DY)</th><th>Status Mercado</th><th>Ação</th></tr></thead>
+        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Div. Anual</th><th>Status Mercado</th><th>Ação</th></tr></thead>
         <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['DY']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar_modelo.iterrows()])}</tbody>
     </table></div>"""
     st.markdown(html_radar_m, unsafe_allow_html=True)
@@ -341,6 +340,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
