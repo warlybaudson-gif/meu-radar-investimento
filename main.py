@@ -74,7 +74,15 @@ def calcular_dados(lista):
                 if t in ["NVDA", "AAPL"]: p_justo *= cambio_hoje
                 status_m = "✅ DESCONTADO" if p_atual < p_justo else "❌ SOBREPREÇO"
                 variacoes = hist['Close'].pct_change() * 100
-                acao = "✅ COMPRAR" if p_atual < m_30 and status_m == "✅ DESCONTADO" else "⚠️ ESPERAR"
+                
+                # ADIÇÃO: LÓGICA DE AÇÃO (COMPRAR / VENDER / ESPERAR)
+                if p_atual < m_30 and status_m == "✅ DESCONTADO":
+                    acao = "✅ COMPRAR"
+                elif p_atual > (p_justo * 1.20):
+                    acao = "🛑 VENDER"
+                else:
+                    acao = "⚠️ ESPERAR"
+
                 res.append({
                     "Ativo": nome_ex, "Ticker_Raw": t, "Preço": f"{p_atual:.2f}", "Justo": f"{p_justo:.2f}",
                     "Status M": status_m, "Ação": acao, "V_Cru": p_atual, "Var_Min": variacoes.min(),
@@ -157,7 +165,7 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
 
-# ==================== ABA 2: RADAR CARTEIRA MODELO (COM ADIÇÕES SOLICITADAS) ====================
+# ==================== ABA 2: RADAR CARTEIRA MODELO ====================
 with tab_radar_modelo:
     st.subheader("🛰️ Radar de Ativos: Carteira Modelo Tio Huli")
     html_radar_m = f"""<div class="mobile-table-container"><table class="rockefeller-table">
@@ -166,7 +174,6 @@ with tab_radar_modelo:
     </table></div>"""
     st.markdown(html_radar_m, unsafe_allow_html=True)
 
-    # ADIÇÃO: RAIO-X DE VOLATILIDADE
     st.subheader("📊 Raio-X de Volatilidade (Ativos Modelo)")
     html_vol_m = f"""<div class="mobile-table-container"><table class="rockefeller-table">
         <thead><tr><th>Ativo</th><th>Dias A/B</th><th>Pico</th><th>Fundo</th><th>Alerta</th></tr></thead>
@@ -174,7 +181,6 @@ with tab_radar_modelo:
     </table></div>"""
     st.markdown(html_vol_m, unsafe_allow_html=True)
 
-    # ADIÇÃO: SENTIMENTO DE MERCADO
     st.subheader("🌡️ Sentimento de Mercado (Modelo)")
     caros_m = len(df_radar_modelo[df_radar_modelo['Status M'] == "❌ SOBREPREÇO"])
     score_m = (caros_m / len(df_radar_modelo)) * 100 if len(df_radar_modelo) > 0 else 0
@@ -182,7 +188,6 @@ with tab_radar_modelo:
     st.write(f"Índice de Sobrepreço Modelo: **{int(score_m)}%**")
 
     st.markdown("---")
-    # ADIÇÃO: GESTOR DE CARTEIRA DINÂMICA
     st.subheader("🧮 Gestor de Carteira: Ativos Modelo")
     capital_xp_m = st.number_input("💰 Capital na Corretora para Ativos Modelo (R$):", min_value=0.0, value=0.0, step=100.0, key="cap_huli")
     ativos_sel_m = st.multiselect("Habilite ativos da Carteira Modelo:", df_radar_modelo["Ativo"].unique(), key="sel_huli")
@@ -212,16 +217,18 @@ with tab_radar_modelo:
             <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>R$ {r['PM']}</td><td>R$ {r['Total']}</td><td>{r['Lucro']}</td></tr>" for r in lista_c_m])}</tbody>
         </table></div>""", unsafe_allow_html=True)
 
-        # ADIÇÃO: PATRIMÔNIO GLOBAL E GRÁFICO DE BARRAS
         st.subheader("💰 Patrimônio Global (Estratégia Modelo)")
         patri_global_m = v_ativos_atual_m + troco_real_m
         m1_m, m2_m = st.columns(2)
         m1_m.metric("Total em Ativos Modelo", f"R$ {v_ativos_atual_m:,.2f}")
         m2_m.metric("PATRIMÔNIO MODELO TOTAL", f"R$ {patri_global_m:,.2f}")
         
-        # Gráfico de Barras para composição da carteira modelo
-        if not df_grafico_m.empty:
-            st.bar_chart(df_grafico_m.iloc[-1])
+        # --- CORREÇÃO INTEGRADA: PROTEÇÃO DO GRÁFICO ---
+        if not df_grafico_m.empty and v_ativos_atual_m > 0:
+            try:
+                st.bar_chart(df_grafico_m.iloc[-1].fillna(0))
+            except Exception:
+                pass
 
 # ==================== ABA 3: ESTRATÉGIA HULI ====================
 with tab_huli:
@@ -232,13 +239,13 @@ with tab_huli:
         if sum(metas.values()) == 100:
             plano = []
             for nome in ativos_sel:
-                v_at = st.session_state.carteira[nome]["atual"]
+                v_at = st.session_state.carteira.get(nome, {"atual": 0})["atual"]
                 v_id = (v_ativos_atualizado + valor_aporte) * (metas[nome] / 100)
                 nec = v_id - v_at
                 plano.append({"Ativo": nome, "Ação": "APORTAR" if nec > 0 else "AGUARDAR", "Valor": f"R$ {max(0, nec):.2f}"})
             st.table(pd.DataFrame(plano))
 
-# ==================== ABA 4: CARTEIRA MODELO HULI (RESTAURADO INTEGRAL) ====================
+# ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
     st.write("Esta é a base de ativos que compõe o método dele para proteção e renda.")
