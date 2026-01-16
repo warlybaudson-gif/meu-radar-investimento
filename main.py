@@ -75,7 +75,7 @@ def calcular_dados(lista):
                 status_m = "✅ DESCONTADO" if p_atual < p_justo else "❌ SOBREPREÇO"
                 variacoes = hist['Close'].pct_change() * 100
                 
-                # ADIÇÃO: LÓGICA DE AÇÃO (INCLUINDO VENDER)
+                # ADIÇÃO SOLICITADA: LÓGICA DE AÇÃO REFORÇADA (VENDA)
                 if p_atual < m_30 and status_m == "✅ DESCONTADO":
                     acao = "✅ COMPRAR"
                 elif p_atual > (p_justo * 1.20):
@@ -227,7 +227,7 @@ with tab_radar_modelo:
         m1_m.metric("Total em Ativos Modelo", f"R$ {v_ativos_atual_m:,.2f}")
         m2_m.metric("PATRIMÔNIO MODELO TOTAL", f"R$ {patri_global_m:,.2f}")
         
-        # CORREÇÃO: Verificação para exibir o gráfico apenas se houver dados ativos, evitando erro técnico.
+        # CORREÇÃO DE ERRO: Só exibe o gráfico se houver ativos selecionados e dados disponíveis.
         if not df_grafico_m.empty and v_ativos_atual_m > 0:
             st.bar_chart(df_grafico_m.iloc[-1])
 
@@ -240,7 +240,8 @@ with tab_huli:
         if sum(metas.values()) == 100:
             plano = []
             for nome in ativos_sel:
-                v_at = st.session_state.carteira[nome]["atual"]
+                # Verificação extra para evitar erro de dicionário vazio
+                v_at = st.session_state.carteira.get(nome, {"atual": 0})["atual"]
                 v_id = (v_ativos_atualizado + valor_aporte) * (metas[nome] / 100)
                 nec = v_id - v_at
                 plano.append({"Ativo": nome, "Ação": "APORTAR" if nec > 0 else "AGUARDAR", "Valor": f"R$ {max(0, nec):.2f}"})
