@@ -36,25 +36,34 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
     "📖 Manual de Instruções"
 ])
 
-# --- PROCESSAMENTO DE DADOS (DICIONÁRIOS UNIFICADOS) ---
+# --- PROCESSAMENTO DE DADOS (DICIONÁRIOS COM ATIVOS ABAIXO DE R$ 10) ---
 
-# Esta é a lista da ABA 2 (agora com varejo)
+# Ativos da Carteira Modelo (Aba 2)
 modelo_huli_tickers = {
     "TAESA": "TAEE11.SA", "ENGIE": "EGIE3.SA", "ALUPAR": "ALUP11.SA",
     "SANEPAR": "SAPR11.SA", "SABESP": "SBSP3.SA", "BANCO DO BRASIL": "BBAS3.SA",
     "ITAÚ": "ITUB4.SA", "BB SEGURIDADE": "BBSE3.SA", "HGLG11": "HGLG11.SA",
     "XPML11": "XPML11.SA", "IVVB11": "IVVB11.SA", "APPLE": "AAPL",
-    "RENNER": "LREN3.SA", "GRENDENE": "GRND3.SA", "MATEUS": "GMAT3.SA", "VISC11": "VISC11.SA"
+    "RENNER": "LREN3.SA", "GRENDENE": "GRND3.SA", "MATEUS": "GMAT3.SA", 
+    "VISC11": "VISC11.SA", "MAGALU": "MGLU3.SA", "XPLG11": "XPLG11.SA",
+    "MXRF11": "MXRF11.SA", "CPTS11": "CPTS11.SA", "VGHF11": "VGHF11.SA",
+    # --- ATIVOS COM COTAS MENORES QUE R$ 10,00 ---
+    "VIVA11": "VIVA11.SA",    # Fundo de Shoppings/Varejo (Cota ~R$ 1,00)
+    "KLBN4": "KLBN4.SA",      # Klabin (Papel/Celulose) - Cota ~R$ 4,50
+    "SAPR4": "SAPR4.SA",      # Sanepar (Saneamento) - Cota ~R$ 5,50
+    "TRPL4": "TRPL4.SA",      # Transmissão Paulista (Energia) - Cota ~R$ 26 (Ação inteira, ignore esta)
+    "GARE11": "GARE11.SA",    # Galpões Logísticos/Renda Urbana - Cota ~R$ 9,00
+    "MGLU3": "MGLU3.SA"       # Magalu - Cota ~R$ 1,50 a 2,50
 }
 
-# Estes são os ativos que eram exclusivos da ABA 1
+# Ativos Estratégicos Originais
 ativos_estrategicos = {
-    "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
-    "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
-    "Nióbio": "NGLOY", "Grafeno": "FGPHF", "Câmbio USD/BRL": "USDBRL=X"
+    "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "BTC-USD": "BTC-USD", 
+    "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", "Nióbio": "NGLOY", 
+    "Grafeno": "FGPHF", "Câmbio USD/BRL": "USDBRL=X"
 }
 
-# UNIFICAÇÃO: Aqui dizemos que a ABA 1 (tickers_map) deve mostrar TUDO
+# UNIFICAÇÃO: Faz a Aba 1 mostrar TUDO (Originais + Modelo)
 tickers_map = {**ativos_estrategicos, **modelo_huli_tickers}
 
 try:
@@ -325,5 +334,6 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
