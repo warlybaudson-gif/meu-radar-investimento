@@ -81,18 +81,24 @@ def calcular_dados(lista):
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
                 
-                # --- LÓGICA: DIVIDIR POR 100 PARA RECUAR A VÍRGULA ---
-                dy_bruto = info.get('dividendYield', 0)
+                # --- APLICAÇÃO DA DIVISÃO DIRETA POR 100 ---
+                dy_bruto = info.get('dividendYield', 0) 
                 
-                if dy_bruto:
-                    # Dividimos por 100 conforme solicitado para ajustar a escala
+                # Pegamos o valor (ex: 0.1456), transformamos em 14.56 
+                # e então DIVIDIMOS POR 100 para recuar a vírgula conforme sua ordem
+                # Isso garante que 1456% vire 14,5%
+                valor_ajustado = (dy_bruto * 100) / 100 
+                
+                # Para ativos onde o Yahoo já manda o número "grande" (ex: 251)
+                # a divisão por 100 fará a vírgula recuar exatamente duas casas.
+                if dy_bruto > 1:
                     valor_ajustado = dy_bruto / 100
-                    # Formata com uma casa decimal e usa vírgula
-                    dy_formata = f"{valor_ajustado:.1f}%".replace('.', ',')
                 else:
-                    dy_formata = "0,0%"
+                    valor_ajustado = dy_bruto * 100 # Caso padrão decimal
+                
+                # Formatação final com uma casa decimal e vírgula
+                dy_formata = f"{valor_ajustado:.1f}%".replace('.', ',')
 
-                # --- MANUTENÇÃO DAS REGRAS ORIGINAIS (SEM ALTERAÇÃO) ---
                 if t in ["NVDA", "GC=F", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]:
                     p_atual = (p_atual / 31.1035) * cambio_hoje if t == "GC=F" else p_atual * cambio_hoje
                 
@@ -351,6 +357,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
