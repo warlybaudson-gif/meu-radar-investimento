@@ -36,16 +36,17 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
     "📖 Manual de Instruções"
 ])
 
-# --- PROCESSAMENTO DE DADOS (DICIONÁRIOS ATUALIZADOS COM MAGALU) ---
+# --- PROCESSAMENTO DE DADOS (DICIONÁRIOS ATUALIZADOS) ---
 
-# Ativos da Carteira Modelo (Aba 2)
+# Ativos da Carteira Modelo (Aba 2) - Agora com Logística e Varejo
 modelo_huli_tickers = {
     "TAESA": "TAEE11.SA", "ENGIE": "EGIE3.SA", "ALUPAR": "ALUP11.SA",
     "SANEPAR": "SAPR11.SA", "SABESP": "SBSP3.SA", "BANCO DO BRASIL": "BBAS3.SA",
     "ITAÚ": "ITUB4.SA", "BB SEGURIDADE": "BBSE3.SA", "HGLG11": "HGLG11.SA",
     "XPML11": "XPML11.SA", "IVVB11": "IVVB11.SA", "APPLE": "AAPL",
     "RENNER": "LREN3.SA", "GRENDENE": "GRND3.SA", "MATEUS": "GMAT3.SA", 
-    "VISC11": "VISC11.SA", "MAGALU": "MGLU3.SA"  # <--- MAGALU ADICIONADA AQUI
+    "VISC11": "VISC11.SA", "MAGALU": "MGLU3.SA",
+    "XPLG11": "XPLG11.SA"  # Galpões alugados para Amazon/Mercado Livre
 }
 
 # Ativos Estratégicos Originais
@@ -55,8 +56,9 @@ ativos_estrategicos = {
     "Nióbio": "NGLOY", "Grafeno": "FGPHF", "Câmbio USD/BRL": "USDBRL=X"
 }
 
-# UNIFICAÇÃO: Faz a Aba 1 mostrar TUDO (Originais + Modelo)
+# UNIFICAÇÃO: Faz a Aba 1 (tickers_map) mostrar a soma de tudo
 tickers_map = {**ativos_estrategicos, **modelo_huli_tickers}
+
 try:
     cambio_hoje = yf.Ticker("USDBRL=X").history(period="1d")['Close'].iloc[-1]
 except:
@@ -360,6 +362,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
