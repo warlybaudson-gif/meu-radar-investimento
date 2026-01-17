@@ -175,6 +175,25 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
 
+# --- CALCULADORA DE APORTE (PARA COMPRAR GMAT3 E OUTROS) ---
+        st.markdown("---")
+        st.subheader("🛍️ Planejador de Compras (Cotas)")
+        valor_disponivel = st.number_input("Quanto pretende investir hoje? (R$):", min_value=0.0, value=500.0, step=100.0, key="calc_aporte")
+        
+        if not df_radar.empty:
+            df_calc = df_radar[['Ativo', 'V_Cru', 'Ação']].copy()
+            df_calc['Cotas'] = (valor_disponivel // df_calc['V_Cru']).astype(int)
+            df_calc['Troco'] = (valor_disponivel % df_calc['V_Cru']).map("R$ {:.2f}".format)
+            
+            st.write(f"Com **R$ {valor_disponivel:.2f}**, você consegue comprar:")
+            st.dataframe(df_calc[['Ativo', 'Cotas', 'Ação', 'Troco']], use_container_width=True, hide_index=True)
+            
+            # Destaque Mateus
+            mateus_row = df_calc[df_calc['Ativo'] == "MATEUS"]
+            if not mateus_row.empty:
+                qtd_mateus = mateus_row['Cotas'].values[0]
+                st.info(f"💡 **Foco GMAT3:** Seu aporte permite comprar **{qtd_mateus} cotas** do Grupo Mateus.")
+
 # ==================== ABA 2: RADAR CARTEIRA MODELO ====================
 with tab_radar_modelo:
     st.subheader("🛰️ Radar de Ativos: Carteira Modelo Tio Huli")
@@ -328,6 +347,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
