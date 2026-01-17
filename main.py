@@ -81,17 +81,24 @@ def calcular_dados(lista):
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
                 
-                # --- AJUSTE: VOLTANDO DUAS CASAS DECIMAIS ---
-                dy = info.get('dividendYield', 0) 
-                if dy:
-                    # Se o valor vem como 2.51 (ou 251%), dividimos por 100 para a vírgula voltar
-                    # Ou se ele já vem como 0.025, apenas formatamos sem multiplicar.
-                    # Para garantir que 251 vire 2,5:
-                    dy_valor = dy if dy < 1 else dy / 100
-                    dy_formata = f"{dy_valor:.1f}%".replace('.', ',')
+                # --- LÓGICA DE CORREÇÃO DA VÍRGULA (VOLTANDO 2 CASAS) ---
+                dy_bruto = info.get('dividendYield', 0)
+                
+                if dy_bruto:
+                    # Se o valor for maior que 1 (ex: 2.5), dividimos por 100 para a vírgula voltar
+                    # Se for 251, ele vira 2.51. Se for 2.5, ele vira 0.025
+                    # Em seguida, formatamos para exibir como 2,5%
+                    if dy_bruto > 1:
+                        dy_ajustado = dy_bruto / 100
+                    else:
+                        dy_ajustado = dy_bruto
+                        
+                    dy_valor_final = dy_ajustado * 100
+                    dy_formata = f"{dy_valor_final:.1f}%".replace('.', ',')
                 else:
                     dy_formata = "0,0%"
 
+                # ... (resto do seu código original de conversão de câmbio e preço justo)
                 if t in ["NVDA", "GC=F", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]:
                     p_atual = (p_atual / 31.1035) * cambio_hoje if t == "GC=F" else p_atual * cambio_hoje
                 
@@ -350,6 +357,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
