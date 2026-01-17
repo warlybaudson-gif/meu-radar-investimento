@@ -81,16 +81,19 @@ def calcular_dados(lista):
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
                 
-                # --- FORMATO ORIGINAL BRUTO DO YFINANCE ---
+                # --- FORMATO ORIGINAL YFINANCE COM AJUSTE DE VÍRGULA ---
                 dy_bruto = info.get('dividendYield', 0)
                 
                 if dy_bruto:
-                    # Apenas exibe o dado como ele vem, com 1 casa decimal
-                    dy_formata = f"{dy_bruto:.1f}%".replace('.', ',')
+                    # O Yahoo entrega 0.0251. Multiplicamos por 100 para ter 2.51
+                    # Se o dado vier sujo (como 0.72), ele mostrará 0,7% (após o recuo de casas)
+                    valor_correto = dy_bruto * 100
+                    # Formata para uma casa decimal e troca ponto por vírgula
+                    dy_formata = f"{valor_correto:.1f}%".replace('.', ',')
                 else:
                     dy_formata = "0,0%"
 
-                # Mantendo o restante do seu código intacto
+                # --- PROCESSAMENTO DE PREÇOS (MANTENDO SUA LÓGICA ORIGINAL) ---
                 if t in ["NVDA", "GC=F", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]:
                     p_atual = (p_atual / 31.1035) * cambio_hoje if t == "GC=F" else p_atual * cambio_hoje
                 
@@ -349,6 +352,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
