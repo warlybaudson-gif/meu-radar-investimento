@@ -81,13 +81,14 @@ def calcular_dados(lista):
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
                 
-                # CORREÇÃO DA VÍRGULA E CASAS DECIMAIS
+                # --- AJUSTE FINAL: 1 CASA DECIMAL E VÍRGULA NO LUGAR CERTO ---
                 dy = info.get('dividendYield', 0) 
                 if dy:
                     dy_valor = dy * 100
-                    dy_formata = f"{dy_valor:.2f}%".replace('.', ',')
+                    # Aqui usamos :.1f para ter apenas UMA casa decimal
+                    dy_formata = f"{dy_valor:.1f}%".replace('.', ',')
                 else:
-                    dy_formata = "0,00%"
+                    dy_formata = "0,0%"
 
                 if t in ["NVDA", "GC=F", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]:
                     p_atual = (p_atual / 31.1035) * cambio_hoje if t == "GC=F" else p_atual * cambio_hoje
@@ -347,6 +348,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
