@@ -81,19 +81,11 @@ def calcular_dados(lista):
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
                 
-                # --- FORMATO ORIGINAL YFINANCE COM AJUSTE DE VÍRGULA ---
+                # --- FORMATO ORIGINAL YFINANCE ---
                 dy_bruto = info.get('dividendYield', 0)
-                
-                if dy_bruto:
-                    # O Yahoo entrega 0.0251. Multiplicamos por 100 para ter 2.51
-                    # Se o dado vier sujo (como 0.72), ele mostrará 0,7% (após o recuo de casas)
-                    valor_correto = dy_bruto * 100
-                    # Formata para uma casa decimal e troca ponto por vírgula
-                    dy_formata = f"{valor_correto:.1f}%".replace('.', ',')
-                else:
-                    dy_formata = "0,0%"
+                dy_formata = f"{dy_bruto:.1f}%".replace('.', ',') if dy_bruto else "0,0%"
 
-                # --- PROCESSAMENTO DE PREÇOS (MANTENDO SUA LÓGICA ORIGINAL) ---
+                # --- PROCESSAMENTO DE PREÇOS E CÂMBIO ---
                 if t in ["NVDA", "GC=F", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]:
                     p_atual = (p_atual / 31.1035) * cambio_hoje if t == "GC=F" else p_atual * cambio_hoje
                 
@@ -105,7 +97,9 @@ def calcular_dados(lista):
                 p_justo = np.sqrt(22.5 * lpa * vpa) if lpa > 0 and vpa > 0 else m_30
                 if t in ["NVDA", "AAPL"]: p_justo *= cambio_hoje
                 
+                # --- CRIAÇÃO DA COLUNA STATUS M (PARA EVITAR O ERRO) ---
                 status_m = "✅ DESCONTADO" if p_atual < p_justo else "❌ SOBREPREÇO"
+                
                 variacoes = hist['Close'].pct_change() * 100
                 
                 if p_atual < m_30 and status_m == "✅ DESCONTADO":
@@ -115,14 +109,23 @@ def calcular_dados(lista):
                 else:
                     acao = "⚠️ ESPERAR"
 
+                # --- MONTAGEM DO DICIONÁRIO COM TODAS AS CHAVES NECESSÁRIAS ---
                 res.append({
-                    "Ativo": nome_ex, "Ticker_Raw": t, 
+                    "Ativo": nome_ex, 
+                    "Ticker_Raw": t, 
                     "Preço": f"{p_atual:.2f}".replace('.', ','), 
                     "Justo": f"{p_justo:.2f}".replace('.', ','),
                     "DY": dy_formata, 
-                    "Status M": status_m, "Ação": acao, "V_Cru": p_atual, "Var_Min": variacoes.min(),
-                    "Var_Max": variacoes.max(), "Dias_A": (variacoes > 0).sum(), "Dias_B": (variacoes < 0).sum(),
-                    "Var_H": variacoes.iloc[-1], "LPA": lpa, "VPA": vpa
+                    "Status M": status_m,  # Coluna criada aqui!
+                    "Ação": acao, 
+                    "V_Cru": p_atual, 
+                    "Var_Min": variacoes.min(),
+                    "Var_Max": variacoes.max(), 
+                    "Dias_A": (variacoes > 0).sum(), 
+                    "Dias_B": (variacoes < 0).sum(),
+                    "Var_H": variacoes.iloc[-1], 
+                    "LPA": lpa, 
+                    "VPA": vpa
                 })
         except: continue
     return pd.DataFrame(res)
@@ -376,6 +379,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
