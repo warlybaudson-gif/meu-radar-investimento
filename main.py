@@ -36,7 +36,7 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
     "📖 Manual de Instruções"
 ])
 
-# --- PROCESSAMENTO DE DADOS (DICIONÁRIOS COM ATIVOS BARATOS - BASE 10) ---
+# --- PROCESSAMENTO DE DADOS (DICIONÁRIOS COM ATIVOS ABAIXO DE R$ 10) ---
 
 # Ativos da Carteira Modelo (Aba 2)
 modelo_huli_tickers = {
@@ -46,12 +46,14 @@ modelo_huli_tickers = {
     "XPML11": "XPML11.SA", "IVVB11": "IVVB11.SA", "APPLE": "AAPL",
     "RENNER": "LREN3.SA", "GRENDENE": "GRND3.SA", "MATEUS": "GMAT3.SA", 
     "VISC11": "VISC11.SA", "MAGALU": "MGLU3.SA", "XPLG11": "XPLG11.SA",
-    # --- NOVOS ATIVOS BARATOS (PARA COMPRAR MUITAS COTAS) ---
-    "MXRF11": "MXRF11.SA",    # O mais popular do Brasil (Cota ~R$ 10)
-    "CPTS11": "CPTS11.SA",    # Papel (Crédito Imobiliário) - Base 10
-    "KNSC11": "KNSC11.SA",    # Fundo de Papel indexado ao IPCA - Base 10
-    "VGHF11": "VGHF11.SA",    # Fundo Hedge (Multiestratégia) - Base 10
-    "SAPR4": "SAPR4.SA"       # Ação da Sanepar (Cota ~R$ 5)
+    "MXRF11": "MXRF11.SA", "CPTS11": "CPTS11.SA", "VGHF11": "VGHF11.SA",
+    # --- ATIVOS COM COTAS MENORES QUE R$ 10,00 ---
+    "VIVA11": "VIVA11.SA",    # Fundo de Shoppings/Varejo (Cota ~R$ 1,00)
+    "KLBN4": "KLBN4.SA",      # Klabin (Papel/Celulose) - Cota ~R$ 4,50
+    "SAPR4": "SAPR4.SA",      # Sanepar (Saneamento) - Cota ~R$ 5,50
+    "TRPL4": "TRPL4.SA",      # Transmissão Paulista (Energia) - Cota ~R$ 26 (Ação inteira, ignore esta)
+    "GARE11": "GARE11.SA",    # Galpões Logísticos/Renda Urbana - Cota ~R$ 9,00
+    "MGLU3": "MGLU3.SA"       # Magalu - Cota ~R$ 1,50 a 2,50
 }
 
 # Ativos Estratégicos Originais
@@ -367,6 +369,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
