@@ -81,11 +81,11 @@ def calcular_dados(lista):
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
                 
-                # --- FORMATO ORIGINAL YFINANCE ---
+                # --- DADOS BRUTOS ---
                 dy_bruto = info.get('dividendYield', 0)
                 dy_formata = f"{dy_bruto:.1f}%".replace('.', ',') if dy_bruto else "0,0%"
 
-                # --- PROCESSAMENTO DE PREÇOS E CÂMBIO ---
+                # --- REGRAS DE CÂMBIO ---
                 if t in ["NVDA", "GC=F", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]:
                     p_atual = (p_atual / 31.1035) * cambio_hoje if t == "GC=F" else p_atual * cambio_hoje
                 
@@ -97,11 +97,11 @@ def calcular_dados(lista):
                 p_justo = np.sqrt(22.5 * lpa * vpa) if lpa > 0 and vpa > 0 else m_30
                 if t in ["NVDA", "AAPL"]: p_justo *= cambio_hoje
                 
-                # --- CRIAÇÃO DA COLUNA STATUS M (PARA EVITAR O ERRO) ---
+                # --- STATUS DE MERCADO ---
                 status_m = "✅ DESCONTADO" if p_atual < p_justo else "❌ SOBREPREÇO"
-                
                 variacoes = hist['Close'].pct_change() * 100
                 
+                # Regra de Ação
                 if p_atual < m_30 and status_m == "✅ DESCONTADO":
                     acao = "✅ COMPRAR"
                 elif p_atual > (p_justo * 1.20):
@@ -109,14 +109,15 @@ def calcular_dados(lista):
                 else:
                     acao = "⚠️ ESPERAR"
 
-                # --- MONTAGEM DO DICIONÁRIO COM TODAS AS CHAVES NECESSÁRIAS ---
+                # --- O PULO DO GATO: CRIAR TODAS AS COLUNAS POSSÍVEIS ---
                 res.append({
                     "Ativo": nome_ex, 
                     "Ticker_Raw": t, 
                     "Preço": f"{p_atual:.2f}".replace('.', ','), 
                     "Justo": f"{p_justo:.2f}".replace('.', ','),
                     "DY": dy_formata, 
-                    "Status M": status_m,  # Coluna criada aqui!
+                    "Status M": status_m,        # Nome curto
+                    "Status Mercado": status_m,  # Nome longo (caso o erro seja aqui)
                     "Ação": acao, 
                     "V_Cru": p_atual, 
                     "Var_Min": variacoes.min(),
@@ -379,6 +380,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
