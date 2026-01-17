@@ -160,6 +160,15 @@ with tab_painel:
                 p_atual = info["V_Cru"]
                 pm_calc = investido / qtd if qtd > 0 else 0.0
                 v_agora = qtd * p_atual
+
+                # --- NOVO: ALERTA DE PREÇO MÉDIO PARA GMAT3 E OUTROS ---
+                if qtd > 0:
+                    if p_atual < pm_calc:
+                        desconto = ((pm_calc - p_atual) / pm_calc) * 100
+                        st.warning(f"📉 **OPORTUNIDADE EM {nome}:** Está {desconto:.1f}% abaixo do seu PM (R$ {pm_calc:.2f}). Hora de comprar mais cotas!")
+                    else:
+                        st.info(f"✅ **{nome}:** Acima do seu Preço Médio.")
+                # ------------------------------------------------------
                 total_investido_acumulado += investido
                 v_ativos_atualizado += v_agora
                 st.session_state.carteira[nome] = {"atual": v_agora}
@@ -360,6 +369,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
