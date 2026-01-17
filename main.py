@@ -72,7 +72,6 @@ except:
     cambio_hoje = 5.40
 
 def calcular_dados(lista):
-    # Dicionário de Nomes (Adicionado para a nova coluna)
     nomes_empresas = {
         "PETR4.SA": "Petrobras", "VALE3.SA": "Vale", "MXRF11.SA": "FII MXRF11",
         "BTC-USD": "Bitcoin", "NVDA": "Nvidia", "GC=F": "Ouro",
@@ -92,8 +91,6 @@ def calcular_dados(lista):
             info = ativo.info
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
-                
-                # Tradução do Nome
                 empresa_nome = nomes_empresas.get(t, nome_ex)
 
                 if t in ["NVDA", "GC=F", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]:
@@ -117,17 +114,12 @@ def calcular_dados(lista):
                 else:
                     acao = "⚠️ ESPERAR"
 
-                # Captura de Dividendos para evitar o KeyError
                 dy_val = info.get('dividendYield', 0)
                 dy_formata = f"{(dy_val*100):.1f}%".replace('.', ',') if dy_val else "0,0%"
 
                 res.append({
-                    "Ativo": nome_ex, 
-                    "Empresa": empresa_nome, 
-                    "Ticker_Raw": t, 
-                    "Preço": f"{p_atual:.2f}", 
-                    "Justo": f"{p_justo:.2f}",
-                    "DY": dy_formata, # <--- ESSA CHAVE RESOLVE O ERRO
+                    "Ativo": nome_ex, "Empresa": empresa_nome, "Ticker_Raw": t, 
+                    "Preço": f"{p_atual:.2f}", "Justo": f"{p_justo:.2f}", "DY": dy_formata,
                     "Status M": status_m, "Ação": acao, "V_Cru": p_atual, 
                     "Var_Min": variacoes.min(), "Var_Max": variacoes.max(), 
                     "Dias_A": (variacoes > 0).sum(), "Dias_B": (variacoes < 0).sum(),
@@ -143,9 +135,9 @@ if 'carteira_modelo' not in st.session_state: st.session_state.carteira_modelo =
 
 # ==================== ABA 1: PAINEL DE CONTROLE ====================
 with tab_painel:
-    st.subheader("🛰️ Radar de Ativos Estratégicos")
-   html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-        <thead><tr><th>Empresa</th><th>Ativo</th><th>Preço (R$)</th><th>Justo</th><th>DY</th><th>Status</th><th>Ação</th></tr></thead>
+   st.subheader("🛰️ Radar de Ativos Estratégicos")
+    html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
+        <thead><tr><th>Empresa</th><th>Ativo</th><th>Preço</th><th>Justo</th><th>DY</th><th>Status</th><th>Ação</th></tr></thead>
         <tbody>{"".join([f"<tr><td>{r['Empresa']}</td><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['DY']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar.iterrows()])}</tbody>
     </table></div>"""
     st.markdown(html_radar, unsafe_allow_html=True)
@@ -390,6 +382,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
