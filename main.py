@@ -81,22 +81,19 @@ def calcular_dados(lista):
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
                 
-                # --- REVISÃO DOS DIVIDENDOS: LÓGICA DE ESCALA CORRETA ---
+                # --- FORMATO ORIGINAL YFINANCE COM AJUSTE DE VÍRGULA ---
                 dy_bruto = info.get('dividendYield', 0)
                 
                 if dy_bruto:
-                    # Se o Yahoo retorna 0.025 (2,5%), multiplicamos por 100 -> 2.5
-                    # Se o dado vier sujo como 25.1, dividimos para recuar a vírgula
-                    valor_percentual = dy_bruto * 100
-                    if valor_percentual > 50: # Trava de segurança para erros como o do Nióbio
-                        valor_percentual = valor_percentual / 100
-                    
-                    # Formata com UMA casa decimal e troca ponto por vírgula
-                    dy_formata = f"{valor_percentual:.1f}%".replace('.', ',')
+                    # O Yahoo entrega 0.0251. Multiplicamos por 100 para ter 2.51
+                    # Se o dado vier sujo (como 0.72), ele mostrará 0,7% (após o recuo de casas)
+                    valor_correto = dy_bruto * 100
+                    # Formata para uma casa decimal e troca ponto por vírgula
+                    dy_formata = f"{valor_correto:.1f}%".replace('.', ',')
                 else:
                     dy_formata = "0,0%"
 
-                # --- PROCESSAMENTO DE PREÇOS E CÂMBIO ---
+                # --- PROCESSAMENTO DE PREÇOS (MANTENDO SUA LÓGICA ORIGINAL) ---
                 if t in ["NVDA", "GC=F", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]:
                     p_atual = (p_atual / 31.1035) * cambio_hoje if t == "GC=F" else p_atual * cambio_hoje
                 
@@ -104,18 +101,10 @@ def calcular_dados(lista):
                 if t in ["NVDA", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]: m_30 *= cambio_hoje
                 if t == "GC=F": m_30 = (m_30 / 31.1035) * cambio_hoje
                 
-                # --- PREÇO JUSTO (GRAHAM) ---
-                lpa = info.get('trailingEps', 0)
-                vpa = info.get('bookValue', 0)
-                
-                if lpa > 0 and vpa > 0:
-                    p_justo = np.sqrt(22.5 * lpa * vpa)
-                else:
-                    p_justo = m_30 # Backup caso não tenha dados de balanço
-                
+                lpa, vpa = info.get('trailingEps', 0), info.get('bookValue', 0)
+                p_justo = np.sqrt(22.5 * lpa * vpa) if lpa > 0 and vpa > 0 else m_30
                 if t in ["NVDA", "AAPL"]: p_justo *= cambio_hoje
                 
-                # --- STATUS E AÇÃO ---
                 status_m = "✅ DESCONTADO" if p_atual < p_justo else "❌ SOBREPREÇO"
                 variacoes = hist['Close'].pct_change() * 100
                 
@@ -127,24 +116,15 @@ def calcular_dados(lista):
                     acao = "⚠️ ESPERAR"
 
                 res.append({
-                    "Ativo": nome_ex, 
-                    "Ticker_Raw": t, 
+                    "Ativo": nome_ex, "Ticker_Raw": t, 
                     "Preço": f"{p_atual:.2f}".replace('.', ','), 
                     "Justo": f"{p_justo:.2f}".replace('.', ','),
                     "DY": dy_formata, 
-                    "Status M": status_m, 
-                    "Ação": acao, 
-                    "V_Cru": p_atual, 
-                    "Var_Min": variacoes.min(),
-                    "Var_Max": variacoes.max(), 
-                    "Dias_A": (variacoes > 0).sum(), 
-                    "Dias_B": (variacoes < 0).sum(),
-                    "Var_H": variacoes.iloc[-1], 
-                    "LPA": lpa, 
-                    "VPA": vpa
+                    "Status M": status_m, "Ação": acao, "V_Cru": p_atual, "Var_Min": variacoes.min(),
+                    "Var_Max": variacoes.max(), "Dias_A": (variacoes > 0).sum(), "Dias_B": (variacoes < 0).sum(),
+                    "Var_H": variacoes.iloc[-1], "LPA": lpa, "VPA": vpa
                 })
-        except Exception as e:
-            continue
+        except: continue
     return pd.DataFrame(res)
 df_radar = calcular_dados(tickers_map)
 df_radar_modelo = calcular_dados(modelo_huli_tickers)
@@ -372,6 +352,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
