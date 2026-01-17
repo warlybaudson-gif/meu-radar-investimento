@@ -80,17 +80,10 @@ def calcular_dados(lista):
             info = ativo.info
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
-                
-                # --- FORMATO ORIGINAL BRUTO DO YFINANCE ---
-                dy_bruto = info.get('dividendYield', 0)
-                
-                if dy_bruto:
-                    # Apenas exibe o dado como ele vem, com 1 casa decimal
-                    dy_formata = f"{dy_bruto:.1f}%".replace('.', ',')
-                else:
-                    dy_formata = "0,0%"
+                # Puxa o Yield (Rendimento)
+                dy = info.get('dividendYield', 0) 
+                dy_formata = dy * 100 if dy else 0.0
 
-                # Mantendo o restante do seu código intacto
                 if t in ["NVDA", "GC=F", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]:
                     p_atual = (p_atual / 31.1035) * cambio_hoje if t == "GC=F" else p_atual * cambio_hoje
                 
@@ -113,10 +106,8 @@ def calcular_dados(lista):
                     acao = "⚠️ ESPERAR"
 
                 res.append({
-                    "Ativo": nome_ex, "Ticker_Raw": t, 
-                    "Preço": f"{p_atual:.2f}".replace('.', ','), 
-                    "Justo": f"{p_justo:.2f}".replace('.', ','),
-                    "DY": dy_formata, 
+                    "Ativo": nome_ex, "Ticker_Raw": t, "Preço": f"{p_atual:.2f}", "Justo": f"{p_justo:.2f}",
+                    "DY": f"{dy_formata:.2f}%", # Nova coluna de Dividendos
                     "Status M": status_m, "Ação": acao, "V_Cru": p_atual, "Var_Min": variacoes.min(),
                     "Var_Max": variacoes.max(), "Dias_A": (variacoes > 0).sum(), "Dias_B": (variacoes < 0).sum(),
                     "Var_H": variacoes.iloc[-1], "LPA": lpa, "VPA": vpa
@@ -369,6 +360,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
