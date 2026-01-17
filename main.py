@@ -122,14 +122,21 @@ def calcular_dados(lista):
 
                 res.append({
                     "Ativo": nome_ex, 
-                    "Empresa": empresa_nome, # Nova Coluna aqui!
+                    "Empresa": empresa_nome, 
                     "Ticker_Raw": t, 
                     "Preço": f"{p_atual:.2f}", 
                     "Justo": f"{p_justo:.2f}",
-                    "Status M": status_m, "Ação": acao, "V_Cru": p_atual, 
-                    "Var_Min": variacoes.min(), "Var_Max": variacoes.max(), 
-                    "Dias_A": (variacoes > 0).sum(), "Dias_B": (variacoes < 0).sum(),
-                    "Var_H": variacoes.iloc[-1], "LPA": lpa, "VPA": vpa
+                    "DY": f"{(info.get('dividendYield', 0)*100):.1f}%".replace('.', ','), # <--- ESTA LINHA
+                    "Status M": status_m, 
+                    "Ação": acao, 
+                    "V_Cru": p_atual, 
+                    "Var_Min": variacoes.min(),
+                    "Var_Max": variacoes.max(), 
+                    "Dias_A": (variacoes > 0).sum(), 
+                    "Dias_B": (variacoes < 0).sum(),
+                    "Var_H": variacoes.iloc[-1], 
+                    "LPA": lpa, 
+                    "VPA": vpa
                 })
         except: continue
     return pd.DataFrame(res)
@@ -388,6 +395,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
