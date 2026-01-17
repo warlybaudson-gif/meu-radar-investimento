@@ -80,10 +80,9 @@ def calcular_dados(lista):
             info = ativo.info
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
-                # --- CÁLCULO CORRIGIDO DO DIVIDENDO ---
-                dy = info.get('dividendYield', 0) 
                 
-                # Se o dado existir, multiplica por 100 e formata com 2 casas e vírgula
+                # CORREÇÃO DA VÍRGULA E CASAS DECIMAIS
+                dy = info.get('dividendYield', 0) 
                 if dy:
                     dy_valor = dy * 100
                     dy_formata = f"{dy_valor:.2f}%".replace('.', ',')
@@ -112,7 +111,8 @@ def calcular_dados(lista):
                     acao = "⚠️ ESPERAR"
 
                 res.append({
-                    "Ativo": nome_ex, "Ticker_Raw": t, "Preço": f"{p_atual:.2f}".replace('.', ','), 
+                    "Ativo": nome_ex, "Ticker_Raw": t, 
+                    "Preço": f"{p_atual:.2f}".replace('.', ','), 
                     "Justo": f"{p_justo:.2f}".replace('.', ','),
                     "DY": dy_formata, 
                     "Status M": status_m, "Ação": acao, "V_Cru": p_atual, "Var_Min": variacoes.min(),
@@ -347,6 +347,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
