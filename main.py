@@ -72,6 +72,22 @@ except:
     cambio_hoje = 5.40
 
 def calcular_dados(lista):
+    # Dicionário de Tradução para Nomes Reais
+    nomes_empresas = {
+        "PETR4.SA": "Petrobras", "VALE3.SA": "Vale", "MXRF11.SA": "FII MXRF11",
+        "BTC-USD": "Bitcoin", "NVDA": "Nvidia", "GC=F": "Ouro (Contrato)",
+        "NGLOY": "Nióbio", "FGPHF": "First Graphene",
+        "USDBRL=X": "Dólar Comercial", "TAEE11.SA": "Taesa", "EGIE3.SA": "Engie",
+        "ALUP11.SA": "Alupar", "SAPR11.SA": "Sanepar", "SBSP3.SA": "Sabesp",
+        "BBAS3.SA": "Banco do Brasil", "ITUB4.SA": "Itaú Unibanco",
+        "BBSE3.SA": "BB Seguridade", "HGLG11.SA": "FII HGLG11",
+        "XPML11.SA": "FII XP Malls", "IVVB11.SA": "ETF S&P 500",
+        "AAPL": "Apple Inc.", "LREN3.SA": "Lojas Renner",
+        "GRND3.SA": "Grendene", "GMAT3.SA": "Grupo Mateus",
+        "VISC11.SA": "FII Vinci Shopping", "MGLU3.SA": "Magalu",
+        "VIVA11.SA": "FII VIVA11", "KLBN4.SA": "Klabin",
+        "SAPR4.SA": "Sanepar (Pref)", "GARE11.SA": "FII GARE11"
+    }
     res = []
     for nome_ex, t in lista.items():
         try:
@@ -80,7 +96,10 @@ def calcular_dados(lista):
             info = ativo.info
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
-                # Puxa o Yield (Rendimento)
+                
+                # Identifica o nome real ou usa o nome do dicionário original
+                emp_nome = nomes_empresas.get(t, nome_ex)
+                
                 dy = info.get('dividendYield', 0) 
                 dy_formata = dy * 100 if dy else 0.0
 
@@ -106,8 +125,10 @@ def calcular_dados(lista):
                     acao = "⚠️ ESPERAR"
 
                 res.append({
-                    "Ativo": nome_ex, "Ticker_Raw": t, "Preço": f"{p_atual:.2f}", "Justo": f"{p_justo:.2f}",
-                    "DY": f"{dy_formata:.2f}%", # Nova coluna de Dividendos
+                    "Ativo": nome_ex, 
+                    "Empresa": emp_nome, # <--- NOVA COLUNA CRIADA AQUI
+                    "Ticker_Raw": t, "Preço": f"{p_atual:.2f}", "Justo": f"{p_justo:.2f}",
+                    "DY": f"{dy_formata:.2f}%", 
                     "Status M": status_m, "Ação": acao, "V_Cru": p_atual, "Var_Min": variacoes.min(),
                     "Var_Max": variacoes.max(), "Dias_A": (variacoes > 0).sum(), "Dias_B": (variacoes < 0).sum(),
                     "Var_H": variacoes.iloc[-1], "LPA": lpa, "VPA": vpa
@@ -122,10 +143,10 @@ if 'carteira_modelo' not in st.session_state: st.session_state.carteira_modelo =
 
 # ==================== ABA 1: PAINEL DE CONTROLE ====================
 with tab_painel:
-    st.subheader("🛰️ Radar de Ativos Estratégicos")
+   st.subheader("🛰️ Radar de Ativos Estratégicos")
     html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Dividendos (DY)</th><th>Status Mercado</th><th>Ação</th></tr></thead>
-        <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['DY']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar.iterrows()])}</tbody>
+        <thead><tr><th>Empresa</th><th>Ativo</th><th>Preço (R$)</th><th>Justo</th><th>DY</th><th>Status</th><th>Ação</th></tr></thead>
+        <tbody>{"".join([f"<tr><td>{r['Empresa']}</td><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['DY']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar.iterrows()])}</tbody>
     </table></div>"""
     st.markdown(html_radar, unsafe_allow_html=True)
     
@@ -369,6 +390,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
