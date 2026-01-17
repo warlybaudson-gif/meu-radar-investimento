@@ -70,18 +70,27 @@ def calcular_dados(lista):
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
                 
-                # Captura do Dividendo Original (Adicionado aqui)
+                # --- FORMATO ORIGINAL BRUTO DO YFINANCE ---
                 dy_bruto = info.get('dividendYield', 0)
-                dy_formata = f"{dy_bruto:.1f}%".replace('.', ',') if dy_bruto else "0,0%"
+                
+                if dy_bruto:
+                    # Apenas exibe o dado como ele vem, com 1 casa decimal
+                    dy_formata = f"{dy_bruto:.1f}%".replace('.', ',')
+                else:
+                    dy_formata = "0,0%"
 
+                # Mantendo o restante do seu código intacto
                 if t in ["NVDA", "GC=F", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]:
                     p_atual = (p_atual / 31.1035) * cambio_hoje if t == "GC=F" else p_atual * cambio_hoje
+                
                 m_30 = hist['Close'].mean()
                 if t in ["NVDA", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]: m_30 *= cambio_hoje
                 if t == "GC=F": m_30 = (m_30 / 31.1035) * cambio_hoje
+                
                 lpa, vpa = info.get('trailingEps', 0), info.get('bookValue', 0)
                 p_justo = np.sqrt(22.5 * lpa * vpa) if lpa > 0 and vpa > 0 else m_30
                 if t in ["NVDA", "AAPL"]: p_justo *= cambio_hoje
+                
                 status_m = "✅ DESCONTADO" if p_atual < p_justo else "❌ SOBREPREÇO"
                 variacoes = hist['Close'].pct_change() * 100
                 
@@ -93,8 +102,10 @@ def calcular_dados(lista):
                     acao = "⚠️ ESPERAR"
 
                 res.append({
-                    "Ativo": nome_ex, "Ticker_Raw": t, "Preço": f"{p_atual:.2f}", "Justo": f"{p_justo:.2f}",
-                    "DY": dy_formata, # Coluna de Dividendos
+                    "Ativo": nome_ex, "Ticker_Raw": t, 
+                    "Preço": f"{p_atual:.2f}".replace('.', ','), 
+                    "Justo": f"{p_justo:.2f}".replace('.', ','),
+                    "DY": dy_formata, 
                     "Status M": status_m, "Ação": acao, "V_Cru": p_atual, "Var_Min": variacoes.min(),
                     "Var_Max": variacoes.max(), "Dias_A": (variacoes > 0).sum(), "Dias_B": (variacoes < 0).sum(),
                     "Var_H": variacoes.iloc[-1], "LPA": lpa, "VPA": vpa
@@ -347,6 +358,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
