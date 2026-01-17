@@ -199,6 +199,30 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
 
+# --- CÓDIGO PARA INSERIR NO FINAL DA ABA 1 ---
+
+with aba1:
+    st.subheader("💰 Calculadora de Poder de Compra")
+    
+    # Campo para você digitar quanto tem na carteira hoje
+    valor_disponivel = st.number_input("Quanto deseja investir hoje (R$)?", min_value=0.0, value=500.0, step=50.0)
+    
+    if not df_resultados.empty:
+        # Criamos a tabela de simulação
+        df_simulacao = df_resultados[['Ativo', 'V_Cru', 'Ação']].copy()
+        df_simulacao['Cotas Possíveis'] = (valor_disponivel // df_simulacao['V_Cru']).astype(int)
+        df_simulacao['Sobra (R$)'] = (valor_disponivel % df_simulacao['V_Cru']).map("{:.2f}".format)
+        
+        # Filtramos para mostrar o que interessa
+        st.write(f"Com **R$ {valor_disponivel:.2f}**, você consegue comprar:")
+        st.dataframe(df_simulacao[['Ativo', 'Cotas Possíveis', 'Ação', 'Sobra (R$)']], use_container_width=True)
+        
+        # Destaque para o Grupo Mateus
+        mateus = df_simulacao[df_simulacao['Ativo'] == 'MATEUS']
+        if not mateus.empty:
+            qtd = mateus['Cotas Possíveis'].values[0]
+            st.success(f"Destaque: Você pode comprar **{qtd} cotas** de GMAT3 agora!")
+
 # ==================== ABA 2: RADAR CARTEIRA MODELO ====================
 with tab_radar_modelo:
     st.subheader("🛰️ Radar de Ativos: Carteira Modelo Tio Huli")
@@ -352,6 +376,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
