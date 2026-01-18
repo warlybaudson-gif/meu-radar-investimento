@@ -362,6 +362,7 @@ with tab_huli:
         
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
+        
     # --- RESUMO DA RENDA PASSIVA (DENTRO DA ABA 3) ---
         st.markdown("---")
         
@@ -468,6 +469,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
