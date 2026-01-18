@@ -363,28 +363,29 @@ with tab_huli:
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
         
-        # --- RADAR DE DATAS IMPORTANTES (VERSÃO LIMPA) ---
+     # --- RADAR DE PROVENTOS ESTIMADOS (TODOS OS ATIVOS) ---
         st.markdown("---")
-        st.subheader("🔔 Radar de Proventos Estimados")
-        st.info("💡 **Dica de Mestre:** O valor abaixo é o que este aporte específico adiciona à sua renda média mensal.")
-        
-        # Criamos colunas para os ativos
-        col_avisos = st.columns(len(df_prioridade[:3])) 
-        
-        for i, (idx, r) in enumerate(df_prioridade[:3].iterrows()):
-            with col_avisos[i]:
-                # Calculamos a renda específica desse ativo para mostrar no card
-                preco_v = float(r['V_Cru'])
-                cotas = int(v_aporte / len(df_prioridade) // preco_v) if preco_v > 0 else 0
-                dy_decimal = float(r['DY'].replace('%', '').replace(',', '.')) / 100
-                renda_individual = (cotas * preco_v * (dy_decimal / 12))
-                
-                # Exibimos apenas o essencial para não poluir
-                st.success(f"📌 **{r['Ativo']}**")
-                st.write(f"**+ R$ {renda_individual:.2f}**/mês")
+        st.subheader("🔔 Impacto Individual na Renda")
+        st.info("💡 Abaixo você vê quanto cada ativo deste aporte vai render por mês:")
 
-        # Métrica de impacto
-        st.metric("Salto na sua Renda Mensal", f"R$ {total_renda_mensal:.2f}", delta=f"{((total_renda_mensal/1000)*100):.2f}% vs Inicial")
+        # Usamos um container para listar todos sem amontoar colunas
+        for idx, r in df_prioridade.iterrows():
+            preco_v = float(r['V_Cru'])
+            # Divide o aporte total pela quantidade de ativos que deram compra
+            valor_alocado = v_aporte / len(df_prioridade)
+            cotas = int(valor_alocado // preco_v) if preco_v > 0 else 0
+            
+            # Cálculo da renda
+            dy_decimal = float(r['DY'].replace('%', '').replace(',', '.')) / 100
+            renda_individual = (cotas * preco_v * (dy_decimal / 12))
+            
+            # Criamos uma linha limpa para cada ativo
+            if renda_individual > 0:
+                st.success(f"✅ **{r['Ativo']}**: Este aporte de {cotas} cotas adiciona **R$ {renda_individual:.2f}** à sua renda mensal.")
+
+        # Métrica Final de Resumo
+        st.markdown("---")
+        st.metric("Aumento Total na Renda Mensal", f"R$ {total_renda_mensal:.2f}")
         
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -459,6 +460,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
