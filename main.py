@@ -327,7 +327,7 @@ with tab_radar_modelo:
 with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
     
-    v_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, step=100.0, key="aporte_huli_cotas")
+    v_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, step=100.0, key="aporte_huli_cotas_final")
     
     # Filtra apenas o que é prioridade (✅ COMPRAR)
     df_prioridade = df_radar_modelo[df_radar_modelo['Ação'] == "✅ COMPRAR"].copy()
@@ -337,13 +337,14 @@ with tab_huli:
     else:
         st.write(f"### 🛒 Plano de Execução: O que comprar com R$ {v_aporte:.2f}")
         
-        # Tabela Estilizada com a nova coluna de Cotas
+        # Tabela Estilizada com Ação e Cotas
         html_huli = f"""<div class="mobile-table-container"><table class="rockefeller-table">
             <thead>
                 <tr>
                     <th>Ativo</th>
                     <th>Preço (R$)</th>
-                    <th>Valor Sugerido</th>
+                    <th>Status</th>
+                    <th>Sugestão Valor</th>
                     <th>Qtd. Cotas</th>
                 </tr>
             </thead>
@@ -354,13 +355,13 @@ with tab_huli:
         
         for _, r in df_prioridade.iterrows():
             preco_v = float(r['V_Cru'])
-            # Cálculo das cotas: Valor disponível / Preço do Ativo (arredondado para baixo)
             cotas_sugeridas = int(valor_cada // preco_v) if preco_v > 0 else 0
             
             html_huli += f"""
                 <tr>
                     <td><b>{r['Ativo']}</b></td>
                     <td>R$ {r['Preço']}</td>
+                    <td style='color:#00ff00'><b>{r['Ação']}</b></td>
                     <td>R$ {valor_cada:.2f}</td>
                     <td style='color:#00d4ff; font-size: 1.1rem;'><b>{cotas_sugeridas} UN</b></td>
                 </tr>"""
@@ -368,7 +369,7 @@ with tab_huli:
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
         
-        st.info(f"📌 **Dica:** O cálculo de cotas foi feito dividindo R$ {valor_cada:.2f} pelo preço de cada um dos {qtd_ativos} ativos selecionados.")
+        st.info(f"📌 **Dica:** O plano acima mostra apenas ativos com sinal de COMPRA. O valor total de R$ {v_aporte:.2f} foi dividido igualmente entre os {qtd_ativos} ativos.")
         
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -443,6 +444,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
