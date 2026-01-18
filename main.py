@@ -363,8 +363,10 @@ with tab_huli:
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
         
-# --- RESUMO DA RENDA PASSIVA ---
+# --- RESUMO DA RENDA PASSIVA (DENTRO DA ABA 3) ---
         st.markdown("---")
+        
+        # Cálculo das métricas (Garantindo que as colunas existam)
         c1, c2 = st.columns(2)
         with c1:
             st.metric("Total a Investir", f"R$ {v_aporte:,.2f}")
@@ -373,26 +375,28 @@ with tab_huli:
 
         st.success(f"💰 Com este aporte, você passará a receber aproximadamente **R$ {total_renda_mensal:.2f} a mais todos os meses** em dividendos!")
 
-        # Linha de observação final e discreta
-        ativos_lista = ", ".join(df_prioridade['Ativo'].tolist())
-        st.caption(f"📌 **Nota:** Os dividendos de {ativos_lista} caem automaticamente na sua conta da corretora seguindo o calendário de cada ativo.")
+        # Linha de observação - Usando tratamento para evitar o erro de 'Status M'
+        try:
+            # Tenta listar os ativos do dataframe de prioridade
+            ativos_lista = ", ".join(df_prioridade['Ativo'].tolist())
+            st.caption(f"📌 **Nota:** Os dividendos de {ativos_lista} caem automaticamente na sua conta da corretora seguindo o calendário de cada ativo.")
+        except Exception:
+            st.caption("📌 **Nota:** Os dividendos caem automaticamente na sua conta da corretora seguindo o calendário de cada ativo.")
 
-        # --- BOTÃO DE SALVAR APORTE ---
-        if st.button("💾 Salvar Plano de Aporte", key="btn_salvar_huli"):
+        # --- BOTÃO DE SALVAR APORTE (ALINHADO À DIREITA PARA FICAR NA ABA 3) ---
+        if st.button("💾 Salvar Plano de Aporte", key="btn_salvar_huli_v2"):
             try:
-                # Inicializa o config se não existir
                 if "config" not in st.session_state:
                     st.session_state.config = {}
                 
-                # Salva os valores
                 st.session_state.config["ultimo_aporte"] = v_aporte
                 st.session_state.config["renda_est"] = total_renda_mensal
                 
                 st.success(f"✅ Plano de R$ {v_aporte:.2f} salvo com sucesso!")
-            except Exception as e:
-                st.error("Ops! Ocorreu um erro ao salvar.")
+            except:
+                st.error("Erro ao salvar no sistema.")
 
-# <--- O PRÓXIMO "WITH TAB_MODELO:" DEVE COMEÇAR AQUI, SEM ESPAÇOS NA ESQUERDA
+# <--- ATENÇÃO: O "with tab_modelo:" (Aba 4) deve começar aqui, colado na esquerda!
 
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -467,6 +471,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
