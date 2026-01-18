@@ -363,7 +363,7 @@ with tab_huli:
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
         
-   # --- RESUMO FINANCEIRO DO APORTE ---
+# --- RESUMO FINANCEIRO DO APORTE ---
         st.markdown("---")
         
         # Criando dois cartões lado a lado
@@ -387,7 +387,7 @@ with tab_huli:
         # Linha de observação final e discreta
         ativos_lista = ", ".join(df_prioridade['Ativo'].tolist())
         st.caption(f"📌 **Nota:** Os dividendos de {ativos_lista} caem automaticamente na sua conta da corretora seguindo o calendário de cada ativo.")
-        
+
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
@@ -461,6 +461,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
