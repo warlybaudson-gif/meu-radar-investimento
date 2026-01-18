@@ -377,16 +377,13 @@ with tab_huli:
         ativos_lista = ", ".join(df_prioridade['Ativo'].tolist())
         st.caption(f"📌 **Nota:** Os dividendos de {ativos_lista} caem automaticamente na sua conta da corretora seguindo o calendário de cada ativo.")
 
-# --- BOTÃO DE SALVAR APORTE (COPIAR APENAS ESTE BLOCO) ---
+# --- BOTÃO DE SALVAR APORTE ---
         if st.button("💾 Salvar Plano de Aporte", key="btn_salvar_huli"):
-            # Acessamos os dados já existentes para não apagar o que salvamos antes
+            # Adicionamos o valor do aporte planejado aos nossos dados salvos
             dados_para_salvar = carregar_dados_config()
-            
-            # Adicionamos as informações desta aba ao dicionário
             dados_para_salvar["ultimo_aporte_planejado"] = v_aporte
             dados_para_salvar["renda_mensal_estimada"] = total_renda_mensal
             
-            # Gravamos no arquivo
             salvar_dados_config(dados_para_salvar)
             st.success("✅ Plano de aporte salvo com sucesso!")
 
@@ -463,6 +460,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
