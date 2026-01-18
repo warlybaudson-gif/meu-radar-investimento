@@ -326,67 +326,17 @@ with tab_radar_modelo:
 # ==================== ABA 3: ESTRATÉGIA HULI ====================
 with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
-    
-    v_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, step=100.0, key="aporte_huli_final_v3")
-    
-    # Filtra apenas o que é prioridade (✅ COMPRAR)
-    df_prioridade = df_radar_modelo[df_radar_modelo['Ação'] == "✅ COMPRAR"].copy()
-    
-    if df_prioridade.empty:
-        st.warning("⚠️ No momento, nenhum ativo atingiu os critérios de COMPRA.")
-    else:
-        st.write(f"### 🛒 Plano de Execução e Renda Estimada")
-        
-        html_huli = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-            <thead>
-                <tr>
-                    <th>Ativo</th>
-                    <th>Preço (R$)</th>
-                    <th>Status</th>
-                    <th>Cotas</th>
-                    <th>Dividendos (DY)</th>
-                    <th>Renda Mensal Est.</th>
-                </tr>
-            </thead>
-            <tbody>"""
-        
-        total_renda_mensal = 0
-        for _, r in df_prioridade.iterrows():
-            preco_v = float(r['V_Cru'])
-            cotas = int(v_aporte / len(df_prioridade) // preco_v) if preco_v > 0 else 0
-            dy_decimal = float(r['DY'].replace('%', '').replace(',', '.')) / 100
-            renda_est_mes = (cotas * preco_v * (dy_decimal / 12))
-            total_renda_mensal += renda_est_mes
-            
-            html_huli += f"<tr><td><b>{r['Ativo']}</b></td><td>R$ {r['Preço']}</td><td><b style='color:#00ff00'>{r['Ação']}</b></td><td><b style='color:#00d4ff'>{cotas} UN</b></td><td>{r['DY']}</td><td style='color:#f1c40f'>R$ {renda_est_mes:.2f}</td></tr>"
-        
-        html_huli += "</tbody></table></div>"
-        st.markdown(html_huli, unsafe_allow_html=True)
-
-# --- RESUMO DA RENDA PASSIVA ---
-        st.markdown("---")
-        col_m1, col_m2 = st.columns(2)
-        with col_m1:
-            st.metric("Total a Investir", f"R$ {v_aporte:,.2f}")
-        with col_m2:
-            st.metric("Renda Mensal (Est.)", f"R$ {total_renda_mensal:.2f}")
-
-        st.success(f"💰 Aporte estimado em **R$ {total_renda_mensal:.2f} a mais por mês**!")
-
-        # Nota de rodapé segura
-        try:
-            lista_ativos = ", ".join(df_prioridade['Ativo'].astype(str).tolist())
-            st.caption(f"📌 **Nota:** Dividendos de {lista_ativos} caem na sua conta conforme o calendário.")
-        except:
-            st.caption("📌 **Nota:** Os dividendos caem automaticamente na sua conta da corretora.")
-
-        # Botão de Salvar
-        if st.button("💾 Salvar Plano de Aporte", key="btn_final_save"):
-            if "config" not in st.session_state:
-                st.session_state.config = {}
-            st.session_state.config["p_aporte"] = v_aporte
-            st.session_state.config["p_renda"] = total_renda_mensal
-            st.success("✅ Plano salvo com sucesso!")
+    valor_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, value=0.0, step=100.0)
+    if ativos_sel:
+        metas = {nome: st.slider(f"{nome} (%)", 0, 100, 100 // len(ativos_sel), key=f"meta_h_{nome}") for nome in ativos_sel}
+        if sum(metas.values()) == 100:
+            plano = []
+            for nome in ativos_sel:
+                v_at = st.session_state.carteira.get(nome, {"atual": 0})["atual"]
+                v_id = (v_ativos_atualizado + valor_aporte) * (metas[nome] / 100)
+                nec = v_id - v_at
+                plano.append({"Ativo": nome, "Ação": "APORTAR" if nec > 0 else "AGUARDAR", "Valor": f"R$ {max(0, nec):.2f}"})
+            st.table(pd.DataFrame(plano))
 
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -461,4 +411,3 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
-
