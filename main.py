@@ -363,16 +363,25 @@ with tab_huli:
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
         
-        # --- NOVO: RADAR DE DATAS COM (ALERTAS) ---
+        # --- RADAR DE DATAS IMPORTANTES (VERSÃO LIMPA) ---
         st.markdown("---")
-        st.subheader("🔔 Radar de Datas Importantes")
-        st.info("💡 **Dica de Mestre:** Para receber dividendos, você deve possuir a ação na **'Data Com'**. O dinheiro cairá automaticamente na sua conta da corretora na data de pagamento.")
+        st.subheader("🔔 Radar de Proventos Estimados")
+        st.info("💡 **Dica de Mestre:** O valor abaixo é o que este aporte específico adiciona à sua renda média mensal.")
         
-        # Simulação de busca de proventos (Como o yfinance é limitado em datas futuras, listamos as recorrentes)
-        col_avisos = st.columns(len(df_prioridade[:3])) # Mostra os 3 primeiros como exemplo
+        # Criamos colunas para os ativos
+        col_avisos = st.columns(len(df_prioridade[:3])) 
+        
         for i, (idx, r) in enumerate(df_prioridade[:3].iterrows()):
             with col_avisos[i]:
-                st.success(f"📌 **{r['Ativo']}**\n\nFique atento aos anúncios de dividendos este mês para garantir sua renda de **R$ {(total_renda_mensal/len(df_prioridade)):.2f}**.")
+                # Calculamos a renda específica desse ativo para mostrar no card
+                preco_v = float(r['V_Cru'])
+                cotas = int(v_aporte / len(df_prioridade) // preco_v) if preco_v > 0 else 0
+                dy_decimal = float(r['DY'].replace('%', '').replace(',', '.')) / 100
+                renda_individual = (cotas * preco_v * (dy_decimal / 12))
+                
+                # Exibimos apenas o essencial para não poluir
+                st.success(f"📌 **{r['Ativo']}**")
+                st.write(f"**+ R$ {renda_individual:.2f}**/mês")
 
         # Métrica de impacto
         st.metric("Salto na sua Renda Mensal", f"R$ {total_renda_mensal:.2f}", delta=f"{((total_renda_mensal/1000)*100):.2f}% vs Inicial")
@@ -450,6 +459,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
