@@ -363,25 +363,43 @@ with tab_huli:
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
         
-     # --- RADAR DE PROVENTOS ESTIMADOS (TODOS OS ATIVOS) ---
+    # --- CALENDÁRIO ESTIMADO DE PAGAMENTOS ---
         st.markdown("---")
-        st.subheader("🔔 Impacto Individual na Renda")
-        st.info("💡 Abaixo você vê quanto cada ativo deste aporte vai render por mês:")
+        st.subheader("📅 Quando esse dinheiro cai na conta?")
+        st.info("As empresas costumam seguir um padrão histórico de meses para pagar. Confira abaixo:")
 
-        # Usamos um container para listar todos sem amontoar colunas
+        # Dicionário de meses de pagamento (Baseado no histórico das principais empresas)
+        agenda_historica = {
+            "PETR4.SA": "Jan, Mai, Ago, Dez",
+            "VALE3.SA": "Mar, Set",
+            "TAEE11.SA": "Mai, Ago, Dez",
+            "BBAS3.SA": "Mar, Jun, Set, Dez",
+            "ITUB4.SA": "Mensal (Todo mês)",
+            "MXRF11.SA": "Mensal (Todo mês)",
+            "XPML11.SA": "Mensal (Todo mês)",
+            "SAPR11.SA": "Jun, Dez",
+            "ALUP11.SA": "Mai, Nov",
+            "EGIE3.SA": "Mai, Ago, Dez",
+            "TRPL4.SA": "Jan, Abr, Jul, Out",
+            "BBSE3.SA": "Fev, Ago"
+        }
+
+        # Criando a tabela de agenda
+        html_agenda = """<div class="mobile-table-container"><table class="rockefeller-table">
+            <thead><tr><th>Ativo</th><th>Frequência de Pagamento</th><th>Status do Dinheiro</th></tr></thead>
+            <tbody>"""
+        
         for idx, r in df_prioridade.iterrows():
-            preco_v = float(r['V_Cru'])
-            # Divide o aporte total pela quantidade de ativos que deram compra
-            valor_alocado = v_aporte / len(df_prioridade)
-            cotas = int(valor_alocado // preco_v) if preco_v > 0 else 0
+            ticker = r['Ativo']
+            meses = agenda_historica.get(ticker, "Consultar RI da Empresa")
+            tipo = "Renda Recorrente" if "Mensal" in meses else "Renda Sazonal"
             
-            # Cálculo da renda
-            dy_decimal = float(r['DY'].replace('%', '').replace(',', '.')) / 100
-            renda_individual = (cotas * preco_v * (dy_decimal / 12))
-            
-            # Criamos uma linha limpa para cada ativo
-            if renda_individual > 0:
-                st.success(f"✅ **{r['Ativo']}**: Este aporte de {cotas} cotas adiciona **R$ {renda_individual:.2f}** à sua renda mensal.")
+            html_agenda += f"<tr><td><b>{ticker}</b></td><td>{meses}</td><td>{tipo}</td></tr>"
+        
+        html_agenda += "</tbody></table></div>"
+        st.markdown(html_agenda, unsafe_allow_html=True)
+        
+        st.caption("⚠️ As datas são baseadas no histórico de pagamentos e podem sofrer alterações pela empresa.")
 
         # Métrica Final de Resumo
         st.markdown("---")
@@ -460,6 +478,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
