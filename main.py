@@ -364,8 +364,35 @@ with tab_huli:
         st.markdown(html_huli, unsafe_allow_html=True)
         
 # --- RESUMO DA RENDA PASSIVA ---
-st.markdown("---")
-c1, c2 = st.columns(2)
+        st.markdown("---")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.metric("Total a Investir", f"R$ {v_aporte:,.2f}")
+        with c2:
+            st.metric("Aumento na Renda Mensal (Est.)", f"R$ {total_renda_mensal:.2f}", help="Cálculo baseado no Dividend Yield anual dividido por 12.")
+
+        st.success(f"💰 Com este aporte, você passará a receber aproximadamente **R$ {total_renda_mensal:.2f} a mais todos os meses** em dividendos!")
+
+        # Linha de observação final e discreta
+        ativos_lista = ", ".join(df_prioridade['Ativo'].tolist())
+        st.caption(f"📌 **Nota:** Os dividendos de {ativos_lista} caem automaticamente na sua conta da corretora seguindo o calendário de cada ativo.")
+
+        # --- BOTÃO DE SALVAR APORTE ---
+        if st.button("💾 Salvar Plano de Aporte", key="btn_salvar_huli"):
+            try:
+                # Inicializa o config se não existir
+                if "config" not in st.session_state:
+                    st.session_state.config = {}
+                
+                # Salva os valores
+                st.session_state.config["ultimo_aporte"] = v_aporte
+                st.session_state.config["renda_est"] = total_renda_mensal
+                
+                st.success(f"✅ Plano de R$ {v_aporte:.2f} salvo com sucesso!")
+            except Exception as e:
+                st.error("Ops! Ocorreu um erro ao salvar.")
+
+# <--- O PRÓXIMO "WITH TAB_MODELO:" DEVE COMEÇAR AQUI, SEM ESPAÇOS NA ESQUERDA
 
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -440,6 +467,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
