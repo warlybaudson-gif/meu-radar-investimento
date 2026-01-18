@@ -380,14 +380,6 @@ with tab_huli:
         except:
             st.caption("📌 **Nota:** Os dividendos caem automaticamente na sua conta da corretora.")
 
-        # Botão de Salvar
-        if st.button("💾 Salvar Plano de Aporte", key="btn_final_save"):
-            if "config" not in st.session_state:
-                st.session_state.config = {}
-            st.session_state.config["p_aporte"] = v_aporte
-            st.session_state.config["p_renda"] = total_renda_mensal
-            st.success("✅ Plano salvo com sucesso!")
-
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
@@ -461,6 +453,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
