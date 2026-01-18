@@ -394,55 +394,67 @@ if st.button("💾 Salvar Plano de Aporte", key="btn_salvar_huli"):
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_carteira:
     st.header("📋 Mapa da Carteira Modelo (Estratégia Rockefeller)")
-    st.write("Acompanhe o status atual de cada setor da sua carteira estratégica.")
+    
+    # Função segura para buscar dados sem dar erro
+    def obter_info_ativo(ticker):
+        try:
+            # Verifica se o dataframe existe e tem dados
+            if 'df_radar_modelo' in locals() or 'df_radar_modelo' in globals():
+                if ticker in df_radar_modelo['Ativo'].values:
+                    row = df_radar_modelo[df_radar_modelo['Ativo'] == ticker].iloc[0]
+                    cor = "#00ff00" if "COMPRAR" in row['Ação'] else "#f1c40f"
+                    return f" <b style='color:{cor}; font-size:0.8em;'>({row['Preço']} - {row['Ação']})</b>"
+        except:
+            pass
+        return f" <small style='color:#666;'>(Aguardando dados...)</small>"
 
-    # Função interna para colorir o status e manter o visual limpo
-    def formatar_status_ativo(ticker):
-        if ticker in df_radar_modelo['Ativo'].values:
-            row = df_radar_modelo[df_radar_modelo['Ativo'] == ticker].iloc[0]
-            cor = "#00ff00" if "COMPRAR" in row['Ação'] else "#f1c40f"
-            return f"<br><span style='color:{cor}; font-size:0.8em;'>{row['Preço']} - {row['Ação']}</span>"
-        return "<br><span style='color:#888; font-size:0.8em;'>Aguardando dados...</span>"
-
-    # Layout em Colunas (Mantendo seu design original)
+    # Organização em Colunas conforme seu layout
     col1, col2 = st.columns(2)
 
     with col1:
-        # --- BLOCO 1: VACAS LEITEIRAS ---
+        # --- VACAS LEITEIRAS ---
         st.markdown(f"""
-        <div style="background-color: #1e1e1e; padding: 20px; border-radius: 10px; border-left: 5px solid #00d4ff; margin-bottom: 20px;">
-            <h3 style="margin-top:0;">🐄 Vacas Leiteiras (Dividendos)</h3>
-            <p><b>Energia:</b> TAEE11{formatar_status_ativo('TAEE11.SA')} | TRPL4{formatar_status_ativo('TRPL4.SA')}</p>
-            <p><b>Saneamento:</b> SAPR11{formatar_status_ativo('SAPR11.SA')}</p>
-            <p><b>Seguros:</b> BBSE3{formatar_status_ativo('BBSE3.SA')}</p>
+        <div style="background-color: #1e1e1e; padding: 15px; border-radius: 10px; border-left: 5px solid #00d4ff; margin-bottom: 15px;">
+            <h3 style="margin:0;">🐄 Vacas Leiteiras (Renda)</h3>
+            <p style="margin:10px 0 0 0; font-size:0.9em;">
+                <b>Energia:</b> TAEE11{obter_info_ativo('TAEE11.SA')} | TRPL4{obter_info_ativo('TRPL4.SA')}<br>
+                <b>Saneamento:</b> SAPR11{obter_info_ativo('SAPR11.SA')}<br>
+                <b>Seguros:</b> BBSE3{obter_info_ativo('BBSE3.SA')}
+            </p>
         </div>
         """, unsafe_allow_html=True)
 
-        # --- BLOCO 2: CÃES DE GUARDA ---
+        # --- FUNDOS IMOBILIÁRIOS ---
         st.markdown(f"""
-        <div style="background-color: #1e1e1e; padding: 20px; border-radius: 10px; border-left: 5px solid #f1c40f; margin-bottom: 20px;">
-            <h3 style="margin-top:0;">🛡️ Cães de Guarda (Resiliência)</h3>
-            <p><b>Bancos:</b> BBAS3{formatar_status_ativo('BBAS3.SA')} | ITUB4{formatar_status_ativo('ITUB4.SA')}</p>
-            <p><b>Commodities:</b> VALE3{formatar_status_ativo('VALE3.SA')}</p>
+        <div style="background-color: #1e1e1e; padding: 15px; border-radius: 10px; border-left: 5px solid #9b59b6; margin-bottom: 15px;">
+            <h3 style="margin:0;">🏢 Fundos Imobiliários</h3>
+            <p style="margin:10px 0 0 0; font-size:0.9em;">
+                <b>Logística:</b> HGLG11{obter_info_ativo('HGLG11.SA')}<br>
+                <b>Shopping:</b> XPML11{obter_info_ativo('XPML11.SA')} | VISC11{obter_info_ativo('VISC11.SA')}
+            </p>
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
-        # --- BLOCO 3: CAVALOS DE CORRIDA ---
+        # --- CÃES DE GUARDA ---
         st.markdown(f"""
-        <div style="background-color: #1e1e1e; padding: 20px; border-radius: 10px; border-left: 5px solid #00ff00; margin-bottom: 20px;">
-            <h3 style="margin-top:0;">🐎 Cavalos de Corrida (Crescimento)</h3>
-            <p><b>Varejo/Consumo:</b> ABEV3{formatar_status_ativo('ABEV3.SA')}</p>
-            <p><b>Logística:</b> RAIL3{formatar_status_ativo('RAIL3.SA')}</p>
+        <div style="background-color: #1e1e1e; padding: 15px; border-radius: 10px; border-left: 5px solid #f1c40f; margin-bottom: 15px;">
+            <h3 style="margin:0;">🛡️ Cães de Guarda</h3>
+            <p style="margin:10px 0 0 0; font-size:0.9em;">
+                <b>Bancos:</b> BBAS3{obter_info_ativo('BBAS3.SA')} | ITUB4{obter_info_ativo('ITUB4.SA')}<br>
+                <b>Ouro/Dólar:</b> IVVB11{obter_info_ativo('IVVB11.SA')}
+            </p>
         </div>
         """, unsafe_allow_html=True)
 
-        # --- BLOCO 4: FUNDOS IMOBILIÁRIOS ---
+        # --- CAVALOS DE CORRIDA ---
         st.markdown(f"""
-        <div style="background-color: #1e1e1e; padding: 20px; border-radius: 10px; border-left: 5px solid #9b59b6; margin-bottom: 20px;">
-            <h3 style="margin-top:0;">🏢 Fundos Imobiliários (Renda Mensal)</h3>
-            <p><b>Papel:</b> MXRF11{formatar_status_ativo('MXRF11.SA')}</p>
-            <p><b>Shopping:</b> XPML11{formatar_status_ativo('XPML11.SA')}</p>
+        <div style="background-color: #1e1e1e; padding: 15px; border-radius: 10px; border-left: 5px solid #00ff00; margin-bottom: 15px;">
+            <h3 style="margin:0;">🐎 Cavalos de Corrida</h3>
+            <p style="margin:10px 0 0 0; font-size:0.9em;">
+                <b>Varejo:</b> MGLU3{obter_info_ativo('MGLU3.SA')}<br>
+                <b>Tech:</b> NVDA (Consultar)
+            </p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -499,6 +511,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
