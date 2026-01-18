@@ -378,18 +378,18 @@ ativos_lista = ", ".join(df_prioridade['Ativo'].tolist())
 st.caption(f"📌 **Nota:** Os dividendos de {ativos_lista} caem automaticamente na sua conta da corretora seguindo o calendário de cada ativo.")
 
 # --- BOTÃO DE SALVAR APORTE ---
-if st.button("💾 Salvar Plano de Aporte", key="btn_salvar_huli"):
-    try:
-        # Tentativa de salvar usando o dicionário de configuração do seu app
-        if "config" not in st.session_state:
-            st.session_state.config = {}
+    if st.button("💾 Salvar Plano de Aporte", key="btn_salvar_huli"):
+        try:
+            # Tentativa de salvar usando o dicionário de configuração do seu app
+            if "config" not in st.session_state:
+                st.session_state.config = {}
+                
+            st.session_state.config["ultimo_aporte"] = v_aporte
+            st.session_state.config["renda_est"] = total_renda_mensal
             
-        st.session_state.config["ultimo_aporte"] = v_aporte
-        st.session_state.config["renda_est"] = total_renda_mensal
-        
-        st.success(f"✅ Plano de R$ {v_aporte:.2f} salvo com sucesso!")
-    except Exception as e:
-        st.error("Ops! Ocorreu um erro ao salvar. Verifique se as funções de configuração estão no topo do arquivo.")
+            st.success(f"✅ Plano de R$ {v_aporte:.2f} salvo com sucesso!")
+        except Exception as e:
+            st.error("Ops! Ocorreu um erro ao salvar. Verifique se as funções de configuração estão no topo do arquivo.")
 
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -464,6 +464,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
