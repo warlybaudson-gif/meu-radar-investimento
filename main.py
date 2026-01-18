@@ -366,8 +366,6 @@ with tab_huli:
 # --- RESUMO DA RENDA PASSIVA ---
 st.markdown("---")
 c1, c2 = st.columns(2)
-with c1:
-    st.metric("Total a Investir", f"R$ {(v_aporte):,.2f}")
 
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -442,6 +440,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
