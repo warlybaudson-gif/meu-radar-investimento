@@ -362,8 +362,7 @@ with tab_huli:
         
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
-        
-# --- RESUMO DA RENDA PASSIVA (DENTRO DA ABA 3) ---
+    # --- RESUMO DA RENDA PASSIVA (DENTRO DA ABA 3) ---
         st.markdown("---")
         
         # Cálculo das métricas (Garantindo que as colunas existam)
@@ -394,9 +393,7 @@ with tab_huli:
                 
                 st.success(f"✅ Plano de R$ {v_aporte:.2f} salvo com sucesso!")
             except:
-                st.error("Erro ao salvar no sistema.")
-
-# <--- ATENÇÃO: O "with tab_modelo:" (Aba 4) deve começar aqui, colado na esquerda!
+                st.error("Erro ao salvar no sistema.")    
 
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -471,6 +468,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
