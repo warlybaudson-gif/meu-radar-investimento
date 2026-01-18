@@ -19,7 +19,7 @@ def carregar_dados_usuario():
 # Carrega os dados salvos ao iniciar
 dados_salvos = carregar_dados_usuario()
 
-# 1. CONFIGURAÇÕES E ESTILO REFORÇADO
+# 1. CONFIGURAÇÕES E ESTILO REFORÇADO (MANUTENÇÃO INTEGRAL)
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 
 st.markdown("""
@@ -34,6 +34,7 @@ st.markdown("""
     .rockefeller-table th { background-color: #1a1a1a; color: #58a6ff !important; text-align: center !important; padding: 10px; border-bottom: 2px solid #333; }
     .rockefeller-table td { padding: 10px; text-align: center !important; border-bottom: 1px solid #222; }
     div[data-testid="stMetric"] { background-color: #111111; border: 1px solid #333333; border-radius: 8px; text-align: center; }
+    .manual-section { border-left: 3px solid #58a6ff; padding-left: 15px; margin-bottom: 25px; }
     .huli-category { background-color: #1a1a1a; padding: 15px; border-radius: 5px; border-left: 4px solid #58a6ff; margin: 10px 0; }
     </style>
     """, unsafe_allow_html=True)
@@ -51,7 +52,7 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
     "📖 Manual de Instruções"
 ])
 
-# tickers_map e modelo_huli_tickers
+# --- PROCESSAMENTO DE DADOS ---
 modelo_huli_tickers = {
     "TAESA": "TAEE11.SA", "ENGIE": "EGIE3.SA", "ALUPAR": "ALUP11.SA",
     "SANEPAR": "SAPR11.SA", "SABESP": "SBSP3.SA", "BANCO DO BRASIL": "BBAS3.SA",
@@ -66,72 +67,103 @@ modelo_huli_tickers = {
 
 ativos_estrategicos = {
     "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "BTC-USD": "BTC-USD", 
-    "Nvidia": "NVDA", "Ouro": "GC=F", "Dólar": "USDBRL=X"
+    "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", "Câmbio USD/BRL": "USDBRL=X"
 }
 
 tickers_map = {**ativos_estrategicos, **modelo_huli_tickers}
 
-# Lógica de Cálculo
+try:
+    cambio_hoje = yf.Ticker("USDBRL=X").history(period="1d")['Close'].iloc[-1]
+except:
+    cambio_hoje = 5.40
+
 def calcular_dados(lista):
     res = []
-    try:
-        cambio = yf.Ticker("USDBRL=X").history(period="1d")['Close'].iloc[-1]
-    except:
-        cambio = 5.40
-
     for nome_ex, t in lista.items():
         try:
             ativo = yf.Ticker(t)
             hist = ativo.history(period="30d")
-            if hist.empty: continue
-            
-            p_atual = hist['Close'].iloc[-1]
             info = ativo.info
-            
-            # Ajuste Dólar
-            if t in ["NVDA", "AAPL", "BTC-USD"]: p_atual *= cambio
-            if t == "GC=F": p_atual = (p_atual / 31.1035) * cambio
+            if not hist.empty:
+                p_atual = hist['Close'].iloc[-1]
+                dy = info.get('dividendYield', 0)
+                dy_formata = f"{(dy*100):.1f}%".replace('.', ',') if dy else "0,0%"
 
-            dy = info.get('dividendYield', 0)
-            lpa = info.get('trailingEps', 0)
-            vpa = info.get('bookValue', 0)
-            
-            p_justo = np.sqrt(22.5 * lpa * vpa) if lpa > 0 and vpa > 0 else hist['Close'].mean()
-            if t in ["NVDA", "AAPL"]: p_justo *= cambio
+                if t in ["NVDA", "AAPL", "BTC-USD"]: p_atual *= cambio_hoje
+                if t == "GC=F": p_atual = (p_atual / 31.1035) * cambio_hoje
+                
+                m_30 = hist['Close'].mean()
+                if t in ["NVDA", "AAPL", "BTC-USD"]: m_30 *= cambio_hoje
+                if t == "GC=F": m_30 = (m_30 / 31.1035) * cambio_hoje
+                
+                lpa, vpa = info.get('trailingEps', 0), info.get('bookValue', 0)
+                p_justo = np.sqrt(22.5 * lpa * vpa) if lpa > 0 and vpa > 0 else m_30
+                if t in ["NVDA", "AAPL"]: p_justo *= cambio_hoje
+                
+                status_m = "✅ DESCONTADO" if p_atual < p_justo else "❌ SOBREPREÇO"
+                variacoes = hist['Close'].pct_change() * 100
+                acao = "✅ COMPRAR" if p_atual < p_justo and p_atual < m_30 else "⚠️ ESPERAR"
 
-            status = "✅ DESCONTADO" if p_atual < p_justo else "❌ SOBREPREÇO"
-            acao = "✅ COMPRAR" if p_atual < p_justo else "⚠️ ESPERAR"
-
-            res.append({
-                "Ativo": nome_ex, "Empresa": info.get('longName', nome_ex), "Preço": f"{p_atual:.2f}",
-                "Justo": f"{p_justo:.2f}", "DY": f"{(dy*100):.1f}%", "Status M": status, "Ação": acao,
-                "V_Cru": p_atual, "Var_Min": hist['Close'].pct_change().min()*100,
-                "Var_Max": hist['Close'].pct_change().max()*100,
-                "Dias_A": (hist['Close'].pct_change() > 0).sum(),
-                "Dias_B": (hist['Close'].pct_change() < 0).sum(),
-                "Var_H": hist['Close'].pct_change().iloc[-1], "LPA": lpa, "VPA": vpa, "Ticker_Raw": t
-            })
+                res.append({
+                    "Ativo": nome_ex, "Empresa": info.get('longName', nome_ex), "Ticker_Raw": t, 
+                    "Preço": f"{p_atual:.2f}", "Justo": f"{p_justo:.2f}", "DY": dy_formata, 
+                    "Status M": status_m, "Ação": acao, "V_Cru": p_atual, 
+                    "Var_Min": variacoes.min(), "Var_Max": variacoes.max(), 
+                    "Dias_A": (variacoes > 0).sum(), "Dias_B": (variacoes < 0).sum(),
+                    "Var_H": variacoes.iloc[-1], "LPA": lpa, "VPA": vpa
+                })
         except: continue
     return pd.DataFrame(res)
 
 df_radar = calcular_dados(tickers_map)
 df_radar_modelo = df_radar[df_radar['Ativo'].isin(modelo_huli_tickers.keys())]
 
-# --- ABA 1 ---
+# --- ABA 1: PAINEL DE CONTROLE ---
 with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
-    if not df_radar.empty:
-        html = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-            <thead><tr><th>Empresa</th><th>Ativo</th><th>Preço</th><th>Justo</th><th>DY</th><th>Status</th><th>Ação</th></tr></thead>
-            <tbody>{"".join([f"<tr><td>{r['Empresa'][:20]}</td><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['DY']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar.iterrows()])}</tbody>
-        </table></div>"""
-        st.markdown(html, unsafe_allow_html=True)
+    html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
+        <thead><tr><th>Empresa</th><th>Ativo</th><th>Preço</th><th>Justo</th><th>DY</th><th>Status</th><th>Ação</th></tr></thead>
+        <tbody>{"".join([f"<tr><td>{r['Empresa']}</td><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['DY']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar.iterrows()])}</tbody>
+    </table></div>"""
+    st.markdown(html_radar, unsafe_allow_html=True)
 
-# --- ABA 3 ---
-with tab_huli:
-    st.header("🎯 Estratégia Tio Huli")
-    v_aporte = st.number_input("Quanto pretende investir? (R$):", min_value=0.0, step=100.0, key="aporte_v3")
+    st.subheader("🌡️ Sentimento de Mercado")
+    caros = len(df_radar[df_radar['Status M'] == "❌ SOBREPREÇO"])
+    score = (caros / len(df_radar)) * 100 if len(df_radar) > 0 else 0
+    st.progress(score / 100)
+    st.write(f"Índice de Ativos Caros: **{int(score)}%**")
+
+    st.markdown("---")
+    st.subheader("🧮 Gestor de Carteira Dinâmica")
+    capital_xp = st.number_input("💰 Capital Total na Corretora XP (R$):", min_value=0.0, value=dados_salvos.get("capital_xp", 0.0), step=100.0)
+    ativos_sel = st.multiselect("Habilite seus ativos:", df_radar["Ativo"].unique(), default=[])
     
+    total_investido_acumulado, v_ativos_atualizado = 0, 0
+    if ativos_sel:
+        cols = st.columns(2)
+        for i, nome in enumerate(ativos_sel):
+            with cols[i % 2]:
+                st.markdown(f"**{nome}**")
+                val_qtd_salvo = dados_salvos.get(f"q_{nome}", 0)
+                val_inv_salvo = dados_salvos.get(f"i_{nome}", 0.0)
+                qtd = st.number_input(f"Qtd Cotas ({nome}):", min_value=0, value=val_qtd_salvo, key=f"q_{nome}")
+                investido = st.number_input(f"Total Investido R$ ({nome}):", min_value=0.0, value=val_inv_salvo, key=f"i_{nome}")
+                total_investido_acumulado += investido
+                info = df_radar[df_radar["Ativo"] == nome].iloc[0]
+                v_ativos_atualizado += (qtd * info["V_Cru"])
+
+        if st.button("💾 Salvar Minha Carteira"):
+            dados_p_salvar = {"capital_xp": capital_xp}
+            for n in ativos_sel:
+                dados_p_salvar[f"q_{n}"] = st.session_state[f"q_{n}"]
+                dados_p_salvar[f"i_{n}"] = st.session_state[f"i_{n}"]
+            salvar_dados_usuario(dados_p_salvar)
+            st.success("✅ Salvo com sucesso!")
+
+# --- ABA 3: ESTRATÉGIA HULI ---
+with tab_huli:
+    st.header("🎯 Estratégia Tio Huli: Próximos Passos")
+    v_aporte = st.number_input("Quanto pretende investir? (R$):", min_value=0.0, step=100.0, key="aporte_v3")
     df_prioridade = df_radar_modelo[df_radar_modelo['Ação'] == "✅ COMPRAR"].copy()
     
     if df_prioridade.empty:
@@ -139,39 +171,63 @@ with tab_huli:
     else:
         total_renda_mensal = 0
         html_huli = """<div class="mobile-table-container"><table class="rockefeller-table">
-            <thead><tr><th>Ativo</th><th>Preço</th><th>Cotas</th><th>Renda Est.</th></tr></thead><tbody>"""
-        
+            <thead><tr><th>Ativo</th><th>Preço</th><th>Status</th><th>Cotas</th><th>Renda Est.</th></tr></thead><tbody>"""
         for _, r in df_prioridade.iterrows():
-            preco = float(r['V_Cru'])
-            cotas = int((v_aporte / len(df_prioridade)) // preco)
+            p_v = r['V_Cru']
+            cotas = int((v_aporte / len(df_prioridade)) // p_v) if p_v > 0 else 0
             dy_dec = float(r['DY'].replace('%','').replace(',','.'))/100
-            renda = (cotas * preco * (dy_dec/12))
+            renda = (cotas * p_v * (dy_dec/12))
             total_renda_mensal += renda
-            html_huli += f"<tr><td>{r['Ativo']}</td><td>R$ {r['Preço']}</td><td>{cotas}</td><td>R$ {renda:.2f}</td></tr>"
-        
+            html_huli += f"<tr><td>{r['Ativo']}</td><td>R$ {r['Preço']}</td><td>{r['Ação']}</td><td>{cotas} UN</td><td>R$ {renda:.2f}</td></tr>"
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
         
         st.markdown("---")
-        c1, c2 = st.columns(2)
-        c1.metric("Total a Investir", f"R$ {v_aporte:,.2f}")
-        c2.metric("Aumento Renda Mensal", f"R$ {total_renda_mensal:.2f}")
+        m_c1, m_c2 = st.columns(2)
+        with m_c1: st.metric("Total a Investir", f"R$ {v_aporte:,.2f}")
+        with m_c2: st.metric("Renda Mensal Est.", f"R$ {total_renda_mensal:.2f}")
 
-        if st.button("💾 Salvar Plano de Aporte", key="save_huli"):
+        if st.button("💾 Salvar Plano de Aporte", key="btn_save_huli"):
             st.success("✅ Plano salvo!")
 
-# --- ABA 4 ---
+# --- ABA 4: CARTEIRA MODELO ---
 with tab_modelo:
-    st.header("🏦 Carteira Modelo Huli")
-    col1, col2 = st.columns(2)
-    with col1:
+    st.header("🏦 Ativos Diversificados (Carteira Modelo)")
+    col_a, col_b = st.columns(2)
+    with col_a:
         st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras</b></div>', unsafe_allow_html=True)
-        st.write("• Energia: TAEE11, EGIE3 | • Bancos: BBAS3, ITUB4")
-    with col2:
+        st.write("• Energia: TAEE11, EGIE3, ALUP11 | • Saneamento: SAPR11, SBSP3")
         st.markdown('<div class="huli-category"><b>🏢 FIIs</b></div>', unsafe_allow_html=True)
-        st.write("• Logística: HGLG11 | • Shoppings: XPML11")
+        st.write("• Logística: HGLG11 | • Shoppings: XPML11, VISC11")
+    with col_b:
+        st.markdown('<div class="huli-category"><b>🐕 Cães de Guarda</b></div>', unsafe_allow_html=True)
+        st.write("• Ouro: GC=F | • Dólar: IVVB11")
+        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida</b></div>', unsafe_allow_html=True)
+        st.write("• Tech: NVDA, AAPL | • Cripto: BTC")
 
-# --- ABA 7 ---
+# --- ABA 5: DNA FINANCEIRO ---
+with tab_dna:
+    st.header("🧬 DNA Financeiro (LPA / VPA)")
+    if not df_radar.empty:
+        html_dna = """<div class="mobile-table-container"><table class="rockefeller-table">
+            <thead><tr><th>Ativo</th><th>LPA</th><th>VPA</th><th>P/L</th><th>P/VP</th></tr></thead><tbody>"""
+        for _, r in df_radar.iterrows():
+            pl = r['V_Cru'] / r['LPA'] if r['LPA'] > 0 else 0
+            pvp = r['V_Cru'] / r['VPA'] if r['VPA'] > 0 else 0
+            html_dna += f"<tr><td>{r['Ativo']}</td><td>{r['LPA']:.2f}</td><td>{r['VPA']:.2f}</td><td>{pl:.2f}</td><td>{pvp:.2f}</td></tr>"
+        st.markdown(html_dna + "</tbody></table></div>", unsafe_allow_html=True)
+
+# --- ABA 6: BACKTESTING ---
+with tab_backtest:
+    st.header("📈 Backtesting de Oportunidade")
+    if not df_radar.empty:
+        ativo_bt = st.selectbox("Selecione um ativo:", df_radar["Ativo"].unique())
+        d_bt = df_radar[df_radar["Ativo"] == ativo_bt].iloc[0]
+        st.metric("Volatilidade Máxima (30d)", f"{d_bt['Var_Min']:.2f}%")
+        st.success(f"📌 Se tivesse comprado {ativo_bt} no fundo do mês, o lucro seria de {abs(d_bt['Var_Min']):.2f}%.")
+
+# --- ABA 7: MANUAL ---
 with tab_manual:
-    st.header("📖 Manual")
-    st.info("Utilize o Radar para identificar ativos com Status DESCONTADO e Ação COMPRAR.")
+    st.header("📖 Manual de Instruções")
+    with st.expander("Preço Justo (Graham)"):
+        st.write("Calculado via raiz quadrada de 22.5 * LPA * VPA.")
