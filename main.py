@@ -378,14 +378,17 @@ with tab_huli:
         st.caption(f"📌 **Nota:** Os dividendos de {ativos_lista} caem automaticamente na sua conta da corretora seguindo o calendário de cada ativo.")
 
 # --- BOTÃO DE SALVAR APORTE ---
-        if st.button("💾 Salvar Plano de Aporte", key="btn_salvar_huli"):
-            # Adicionamos o valor do aporte planejado aos nossos dados salvos
-            dados_para_salvar = carregar_dados_config()
-            dados_para_salvar["ultimo_aporte_planejado"] = v_aporte
-            dados_para_salvar["renda_mensal_estimada"] = total_renda_mensal
-            
-            salvar_dados_config(dados_para_salvar)
-            st.success("✅ Plano de aporte salvo com sucesso!")
+if st.button("💾 Salvar Plano de Aporte", key="btn_salvar_huli"):
+    # Carrega o que já existe para não sobrescrever o resto das configurações
+    dados_para_salvar = carregar_dados_config()
+    
+    # Adiciona ou atualiza as metas de aporte
+    dados_para_salvar["ultimo_aporte_planejado"] = v_aporte
+    dados_para_salvar["renda_mensal_estimada"] = total_renda_mensal
+    
+    # Salva no arquivo
+    salvar_dados_config(dados_para_salvar)
+    st.success("✅ Plano de aporte salvo com sucesso!")
 
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -460,6 +463,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
