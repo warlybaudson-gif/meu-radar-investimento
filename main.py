@@ -363,27 +363,16 @@ with tab_huli:
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
         
-# --- RESUMO FINANCEIRO DO APORTE ---
+# --- RESUMO DA RENDA PASSIVA ---
         st.markdown("---")
-        
-        # Criando dois cartões lado a lado
-        col_resumo1, col_resumo2 = st.columns(2)
-        
-        with col_resumo1:
-            st.metric(
-                label="💰 Total a Investir", 
-                value=f"R$ {v_aporte:,.2f}",
-                help="Valor total que você informou para aporte este mês."
-            )
+        c1, c2 = st.columns(2)
+        with c1:
+            st.metric("Total a Investir", f"R$ {(v_aporte):,.2f}")
+        with c2:
+            st.metric("Aumento na Renda Mensal (Est.)", f"R$ {total_renda_mensal:.2f}", help="Cálculo baseado no Dividend Yield anual dividido por 12.")
             
-        with col_resumo2:
-            st.metric(
-                label="📈 Renda Mensal Adicional", 
-                value=f"R$ {total_renda_mensal:.2f}",
-                delta=f"{(total_renda_mensal/v_aporte*100):.2f}% am" if v_aporte > 0 else None,
-                help="Estimativa de quanto esse aporte específico aumentará sua renda média por mês."
-            )
-
+        st.success(f"💰 Com este aporte, você passará a receber aproximadamente **R$ {total_renda_mensal:.2f} a mais todos os meses** em dividendos!")
+        
         # Linha de observação final e discreta
         ativos_lista = ", ".join(df_prioridade['Ativo'].tolist())
         st.caption(f"📌 **Nota:** Os dividendos de {ativos_lista} caem automaticamente na sua conta da corretora seguindo o calendário de cada ativo.")
@@ -461,6 +450,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
