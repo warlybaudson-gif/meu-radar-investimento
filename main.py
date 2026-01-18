@@ -363,47 +363,30 @@ with tab_huli:
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
         
-    # --- CALENDÁRIO ESTIMADO DE PAGAMENTOS ---
+   # --- RESUMO FINANCEIRO DO APORTE ---
         st.markdown("---")
-        st.subheader("📅 Quando esse dinheiro cai na conta?")
-        st.info("As empresas costumam seguir um padrão histórico de meses para pagar. Confira abaixo:")
-
-        # Dicionário de meses de pagamento (Baseado no histórico das principais empresas)
-        agenda_historica = {
-            "PETR4.SA": "Jan, Mai, Ago, Dez",
-            "VALE3.SA": "Mar, Set",
-            "TAEE11.SA": "Mai, Ago, Dez",
-            "BBAS3.SA": "Mar, Jun, Set, Dez",
-            "ITUB4.SA": "Mensal (Todo mês)",
-            "MXRF11.SA": "Mensal (Todo mês)",
-            "XPML11.SA": "Mensal (Todo mês)",
-            "SAPR11.SA": "Jun, Dez",
-            "ALUP11.SA": "Mai, Nov",
-            "EGIE3.SA": "Mai, Ago, Dez",
-            "TRPL4.SA": "Jan, Abr, Jul, Out",
-            "BBSE3.SA": "Fev, Ago"
-        }
-
-        # Criando a tabela de agenda
-        html_agenda = """<div class="mobile-table-container"><table class="rockefeller-table">
-            <thead><tr><th>Ativo</th><th>Frequência de Pagamento</th><th>Status do Dinheiro</th></tr></thead>
-            <tbody>"""
         
-        for idx, r in df_prioridade.iterrows():
-            ticker = r['Ativo']
-            meses = agenda_historica.get(ticker, "Consultar RI da Empresa")
-            tipo = "Renda Recorrente" if "Mensal" in meses else "Renda Sazonal"
+        # Criando dois cartões lado a lado
+        col_resumo1, col_resumo2 = st.columns(2)
+        
+        with col_resumo1:
+            st.metric(
+                label="💰 Total a Investir", 
+                value=f"R$ {v_aporte:,.2f}",
+                help="Valor total que você informou para aporte este mês."
+            )
             
-            html_agenda += f"<tr><td><b>{ticker}</b></td><td>{meses}</td><td>{tipo}</td></tr>"
-        
-        html_agenda += "</tbody></table></div>"
-        st.markdown(html_agenda, unsafe_allow_html=True)
-        
-        st.caption("⚠️ As datas são baseadas no histórico de pagamentos e podem sofrer alterações pela empresa.")
+        with col_resumo2:
+            st.metric(
+                label="📈 Renda Mensal Adicional", 
+                value=f"R$ {total_renda_mensal:.2f}",
+                delta=f"{(total_renda_mensal/v_aporte*100):.2f}% am" if v_aporte > 0 else None,
+                help="Estimativa de quanto esse aporte específico aumentará sua renda média por mês."
+            )
 
-        # Métrica Final de Resumo
-        st.markdown("---")
-        st.metric("Aumento Total na Renda Mensal", f"R$ {total_renda_mensal:.2f}")
+        # Linha de observação final e discreta
+        ativos_lista = ", ".join(df_prioridade['Ativo'].tolist())
+        st.caption(f"📌 **Nota:** Os dividendos de {ativos_lista} caem automaticamente na sua conta da corretora seguindo o calendário de cada ativo.")
         
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -478,6 +461,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
