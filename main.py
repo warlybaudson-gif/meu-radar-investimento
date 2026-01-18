@@ -392,71 +392,24 @@ if st.button("💾 Salvar Plano de Aporte", key="btn_salvar_huli"):
         st.error("Ops! Ocorreu um erro ao salvar. Verifique se as funções de configuração estão no topo do arquivo.")
 
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
-with tab_carteira:
-    st.header("📋 Mapa da Carteira Modelo (Estratégia Rockefeller)")
-    
-    # Função segura para buscar dados sem dar erro
-    def obter_info_ativo(ticker):
-        try:
-            # Verifica se o dataframe existe e tem dados
-            if 'df_radar_modelo' in locals() or 'df_radar_modelo' in globals():
-                if ticker in df_radar_modelo['Ativo'].values:
-                    row = df_radar_modelo[df_radar_modelo['Ativo'] == ticker].iloc[0]
-                    cor = "#00ff00" if "COMPRAR" in row['Ação'] else "#f1c40f"
-                    return f" <b style='color:{cor}; font-size:0.8em;'>({row['Preço']} - {row['Ação']})</b>"
-        except:
-            pass
-        return f" <small style='color:#666;'>(Aguardando dados...)</small>"
-
-    # Organização em Colunas conforme seu layout
+with tab_modelo:
+    st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
+    st.write("Esta é a base de ativos que compõe o método dele para proteção e renda.")
     col1, col2 = st.columns(2)
-
     with col1:
-        # --- VACAS LEITEIRAS ---
-        st.markdown(f"""
-        <div style="background-color: #1e1e1e; padding: 15px; border-radius: 10px; border-left: 5px solid #00d4ff; margin-bottom: 15px;">
-            <h3 style="margin:0;">🐄 Vacas Leiteiras (Renda)</h3>
-            <p style="margin:10px 0 0 0; font-size:0.9em;">
-                <b>Energia:</b> TAEE11{obter_info_ativo('TAEE11.SA')} | TRPL4{obter_info_ativo('TRPL4.SA')}<br>
-                <b>Saneamento:</b> SAPR11{obter_info_ativo('SAPR11.SA')}<br>
-                <b>Seguros:</b> BBSE3{obter_info_ativo('BBSE3.SA')}
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # --- FUNDOS IMOBILIÁRIOS ---
-        st.markdown(f"""
-        <div style="background-color: #1e1e1e; padding: 15px; border-radius: 10px; border-left: 5px solid #9b59b6; margin-bottom: 15px;">
-            <h3 style="margin:0;">🏢 Fundos Imobiliários</h3>
-            <p style="margin:10px 0 0 0; font-size:0.9em;">
-                <b>Logística:</b> HGLG11{obter_info_ativo('HGLG11.SA')}<br>
-                <b>Shopping:</b> XPML11{obter_info_ativo('XPML11.SA')} | VISC11{obter_info_ativo('VISC11.SA')}
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
+        st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras (Renda Passiva)</b><br><small>Foco em Dividendos e Estabilidade</small></div>', unsafe_allow_html=True)
+        st.write("**• Energia:** TAEE11 (Taesa), EGIE3 (Engie), ALUP11 (Alupar)")
+        st.write("**• Saneamento:** SAPR11 (Sanepar), SBSP3 (Sabesp)")
+        st.write("**• Bancos:** BBAS3 (Banco do Brasil), ITUB4 (Itaú), SANB11 (Santander)")
+        st.write("**• Seguradoras:** BBSE3 (BB Seguridade), CXSE3 (Caixa Seguridade)")
+        st.markdown('<div class="huli-category"><b>🏢 Fundos Imobiliários (Renda Mensal)</b><br><small>Aluguéis sem Imposto de Renda</small></div>', unsafe_allow_html=True)
+        st.write("**• Logística:** HGLG11, XPLG11, BTLG11 | **• Shoppings:** XPML11, VISC11, HGBS11")
     with col2:
-        # --- CÃES DE GUARDA ---
-        st.markdown(f"""
-        <div style="background-color: #1e1e1e; padding: 15px; border-radius: 10px; border-left: 5px solid #f1c40f; margin-bottom: 15px;">
-            <h3 style="margin:0;">🛡️ Cães de Guarda</h3>
-            <p style="margin:10px 0 0 0; font-size:0.9em;">
-                <b>Bancos:</b> BBAS3{obter_info_ativo('BBAS3.SA')} | ITUB4{obter_info_ativo('ITUB4.SA')}<br>
-                <b>Ouro/Dólar:</b> IVVB11{obter_info_ativo('IVVB11.SA')}
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # --- CAVALOS DE CORRIDA ---
-        st.markdown(f"""
-        <div style="background-color: #1e1e1e; padding: 15px; border-radius: 10px; border-left: 5px solid #00ff00; margin-bottom: 15px;">
-            <h3 style="margin:0;">🐎 Cavalos de Corrida</h3>
-            <p style="margin:10px 0 0 0; font-size:0.9em;">
-                <b>Varejo:</b> MGLU3{obter_info_ativo('MGLU3.SA')}<br>
-                <b>Tech:</b> NVDA (Consultar)
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="huli-category"><b>🐕 Cães de Guarda (Segurança)</b><br><small>Reserva de Oportunidade e Valor</small></div>', unsafe_allow_html=True)
+        st.write("**• Ouro:** OZ1D ou ETF GOLD11 | **• Dólar:** IVVB11 (S&P 500)")
+        st.write("**• Renda Fixa:** Tesouro Selic e CDBs de liquidez diária")
+        st.markdown('<div class="huli-category"><b>🐎 Cavalos de Corrida (Crescimento)</b><br><small>Aposta no futuro e multiplicação</small></div>', unsafe_allow_html=True)
+        st.write("**• Cripto:** Bitcoin (BTC) e Ethereum (ETH) | **• Tech:** Nvidia (NVDA), Apple (AAPL)")
 
 # ==================== ABA 5: DNA FINANCEIRO ====================
 with tab_dna:
@@ -511,6 +464,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
