@@ -365,20 +365,13 @@ with tab_huli:
 
 # --- RESUMO DA RENDA PASSIVA ---
         st.markdown("---")
-        col_m1, col_m2 = st.columns(2)
-        with col_m1:
-            st.metric("Total a Investir", f"R$ {v_aporte:,.2f}")
-        with col_m2:
-            st.metric("Renda Mensal (Est.)", f"R$ {total_renda_mensal:.2f}")
-
-        st.success(f"💰 Aporte estimado em **R$ {total_renda_mensal:.2f} a mais por mês**!")
-
-        # Nota de rodapé segura
-        try:
-            lista_ativos = ", ".join(df_prioridade['Ativo'].astype(str).tolist())
-            st.caption(f"📌 **Nota:** Dividendos de {lista_ativos} caem na sua conta conforme o calendário.")
-        except:
-            st.caption("📌 **Nota:** Os dividendos caem automaticamente na sua conta da corretora.")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.metric("Total a Investir", f"R$ {(v_aporte):,.2f}")
+        with c2:
+            st.metric("Aumento na Renda Mensal (Est.)", f"R$ {total_renda_mensal:.2f}", help="Cálculo baseado no Dividend Yield anual dividido por 12.")
+            
+        st.success(f"💰 Com este aporte, você passará a receber aproximadamente **R$ {total_renda_mensal:.2f} a mais todos os meses** em dividendos!")
 
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -453,6 +446,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
