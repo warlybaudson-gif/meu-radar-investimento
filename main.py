@@ -363,6 +363,31 @@ with tab_huli:
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
 
+# --- RESUMO DA RENDA PASSIVA ---
+        st.markdown("---")
+        col_m1, col_m2 = st.columns(2)
+        with col_m1:
+            st.metric("Total a Investir", f"R$ {v_aporte:,.2f}")
+        with col_m2:
+            st.metric("Renda Mensal (Est.)", f"R$ {total_renda_mensal:.2f}")
+
+        st.success(f"💰 Aporte estimado em **R$ {total_renda_mensal:.2f} a mais por mês**!")
+
+        # Nota de rodapé segura
+        try:
+            lista_ativos = ", ".join(df_prioridade['Ativo'].astype(str).tolist())
+            st.caption(f"📌 **Nota:** Dividendos de {lista_ativos} caem na sua conta conforme o calendário.")
+        except:
+            st.caption("📌 **Nota:** Os dividendos caem automaticamente na sua conta da corretora.")
+
+        # Botão de Salvar
+        if st.button("💾 Salvar Plano de Aporte", key="btn_final_save"):
+            if "config" not in st.session_state:
+                st.session_state.config = {}
+            st.session_state.config["p_aporte"] = v_aporte
+            st.session_state.config["p_renda"] = total_renda_mensal
+            st.success("✅ Plano salvo com sucesso!")
+
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
@@ -436,3 +461,4 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
