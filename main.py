@@ -326,17 +326,30 @@ with tab_radar_modelo:
 # ==================== ABA 3: ESTRATÉGIA HULI ====================
 with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
-    valor_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, value=0.0, step=100.0)
-    if ativos_sel:
-        metas = {nome: st.slider(f"{nome} (%)", 0, 100, 100 // len(ativos_sel), key=f"meta_h_{nome}") for nome in ativos_sel}
-        if sum(metas.values()) == 100:
-            plano = []
-            for nome in ativos_sel:
-                v_at = st.session_state.carteira.get(nome, {"atual": 0})["atual"]
-                v_id = (v_ativos_atualizado + valor_aporte) * (metas[nome] / 100)
-                nec = v_id - v_at
-                plano.append({"Ativo": nome, "Ação": "APORTAR" if nec > 0 else "AGUARDAR", "Valor": f"R$ {max(0, nec):.2f}"})
-            st.table(pd.DataFrame(plano))
+    
+    # Busca o capital que você já preencheu no painel principal
+    v_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, step=100.0, key="aporte_huli_novo")
+    
+    # Filtra apenas o que é prioridade (✅ COMPRAR)
+    df_prioridade = df_radar_modelo[df_radar_modelo['Ação'] == "✅ COMPRAR"].copy()
+    
+    if df_prioridade.empty:
+        st.info("💡 No momento, nenhum ativo da Carteira Modelo atingiu o sinal de COMPRA. Aguarde uma melhor oportunidade.")
+    else:
+        # Tabela Estilizada com o Estilo Rockefeller
+        html_huli = f"""<div class="mobile-table-container"><table class="rockefeller-table">
+            <thead><tr><th>Ativo</th><th>Preço</th><th>Ação</th><th>Sugestão de Aporte</th></tr></thead>
+            <tbody>"""
+        
+        qtd_ativos = len(df_prioridade)
+        valor_cada = v_aporte / qtd_ativos if qtd_ativos > 0 else 0
+        
+        for _, r in df_prioridade.iterrows():
+            html_huli += f"<tr><td>{r['Ativo']}</td><td>R$ {r['Preço']}</td><td><b style='color:#00ff00'>{r['Ação']}</b></td><td><b>R$ {valor_cada:.2f}</b></td></tr>"
+        
+        html_huli += "</tbody></table></div>"
+        st.markdown(html_huli, unsafe_allow_html=True)
+        st.caption(f"Divisão baseada em {qtd_ativos} ativos com sinal de compra.")
 
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -411,6 +424,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
