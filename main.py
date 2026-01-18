@@ -362,9 +362,41 @@ with tab_backtest:
 # ==================== ABA 7: MANUAL DE INSTRUÇÕES ====================
 with tab_manual:
     st.header("📖 Manual de Instruções - IA Rockefeller")
-    with st.expander("🛰️ Radar de Ativos e Preço Justo", expanded=True):
-        st.markdown("""
-        * **Preço Justo (Graham):** Calculado pela fórmula $V = \sqrt{22.5 \cdot LPA \cdot VPA}$.
-        * **Status Descontado:** Preço de mercado inferior ao Preço Justo.
-        * **Ação COMPRAR:** Ativo abaixo da média de 30 dias e abaixo do preço justo.
+    
+    with st.container():
+        st.markdown('<div class="manual-section">', unsafe_allow_html=True)
+        st.subheader("🛰️ Radar de Ativos e Preço Justo")
+        st.write("""
+        O Radar utiliza a **Fórmula de Graham** para calcular o valor intrínseco:
+        - **Preço Justo:** $\sqrt{22.5 \cdot LPA \cdot VPA}$
+        - **Status Descontado:** Quando o preço atual está abaixo do Preço Justo.
+        - **Ação COMPRAR:** Ativada apenas se o preço estiver abaixo do Preço Justo **E** abaixo da média dos últimos 30 dias.
         """)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with st.container():
+        st.markdown('<div class="manual-section">', unsafe_allow_html=True)
+        st.subheader("📊 Raio-X de Volatilidade")
+        st.write("""
+        - **Dias A/B:** Quantidade de dias de Alta (🟢) versus dias de Baixa (🔴) no último mês.
+        - **Alerta RECORDE:** Disparado quando o ativo cai abaixo da sua mínima histórica dos últimos 30 dias, sinalizando pânico ou oportunidade extrema.
+        """)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with st.container():
+        st.markdown('<div class="manual-section">', unsafe_allow_html=True)
+        st.subheader("🏦 Carteira Modelo (Tio Huli)")
+        st.write("""
+        A estratégia é dividida em classes de ativos para garantir que você nunca dependa de uma única fonte:
+        1. **Vacas Leiteiras:** Geradoras de dividendos constantes.
+        2. **Cães de Guarda:** Proteção contra inflação e crises (Ouro/Dólar).
+        3. **Cavalos de Corrida:** Ativos de alta performance e risco (Cripto/Tech).
+        """)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with st.container():
+        st.markdown('<div class="manual-section">', unsafe_allow_html=True)
+        st.subheader("💾 Salvamento de Dados")
+        st.info("Ao clicar em 'Salvar Minha Carteira', o sistema cria um arquivo local chamado `carteira_salva.json`. Seus dados serão recarregados automaticamente na próxima vez que abrir o app.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
