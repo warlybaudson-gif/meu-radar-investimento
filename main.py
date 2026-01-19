@@ -1,7 +1,7 @@
-import streamlit as st
-import yfinance as yf
-import pandas as pd
-import numpy as np
+import streamlit as st # type: ignore
+import yfinance as yf # type: ignore
+import pandas as pd # type: ignore
+import numpy as np # type: ignore
 import json
 import os
 
@@ -67,6 +67,7 @@ modelo_huli_tickers = {
     "VIVA11": "VIVA11.SA",    # Fundo de Shoppings/Varejo (Cota ~R$ 1,00)
     "KLBN4": "KLBN4.SA",      # Klabin (Papel/Celulose) - Cota ~R$ 4,50
     "SAPR4": "SAPR4.SA",      # Sanepar (Saneamento) - Cota ~R$ 5,50
+    "TRPL4": "TRPL4.SA",      # Transmissão Paulista (Energia) - Cota ~R$ 26 (Ação inteira, ignore esta)
     "GARE11": "GARE11.SA",    # Galpões Logísticos/Renda Urbana - Cota ~R$ 9,00
     "MGLU3": "MGLU3.SA"       # Magalu - Cota ~R$ 1,50 a 2,50
 }
@@ -176,7 +177,7 @@ with tab_painel:
             with cols[i % 2]:
                 st.markdown(f"**{nome}**")
                 
-                # BUSCA VALORES SALVOS
+                # BUSCA VALORES SALVOS (Adicionado aqui)
                 val_qtd_salvo = dados_salvos.get(f"q_{nome}", 0)
                 val_inv_salvo = dados_salvos.get(f"i_{nome}", 0.0)
 
@@ -187,14 +188,14 @@ with tab_painel:
                 pm_calc = investido / qtd if qtd > 0 else 0.0
                 v_agora = qtd * p_atual
 
-                # --- NOVO: ALERTA DE PREÇO MÉDIO ---
+                # --- NOVO: ALERTA DE PREÇO MÉDIO PARA GMAT3 E OUTROS ---
                 if qtd > 0:
                     if p_atual < pm_calc:
                         desconto = ((pm_calc - p_atual) / pm_calc) * 100
                         st.warning(f"📉 **OPORTUNIDADE EM {nome}:** Está {desconto:.1f}% abaixo do seu PM (R$ {pm_calc:.2f}). Hora de comprar mais cotas!")
                     else:
                         st.info(f"✅ **{nome}:** Acima do seu Preço Médio.")
-                
+                # ------------------------------------------------------
                 total_investido_acumulado += investido
                 v_ativos_atualizado += v_agora
                 st.session_state.carteira[nome] = {"atual": v_agora}
@@ -210,6 +211,7 @@ with tab_painel:
         st.subheader("💰 Patrimônio Global")
         with st.sidebar:
             st.header("⚙️ Outros Bens")
+            # Agora eles buscam o que você salvou antes
             g_joias = st.number_input("Ouro Físico (gramas):", min_value=0.0, value=dados_salvos.get("g_joias", 0.0))
             v_bens = st.number_input("Outros Bens/Imóveis (R$):", min_value=0.0, value=dados_salvos.get("v_bens", 0.0))
 
@@ -223,7 +225,7 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
 
-        # --- CALCULADORA DE APORTE ---
+# --- CALCULADORA DE APORTE (PARA COMPRAR GMAT3 E OUTROS) ---
         st.markdown("---")
         st.subheader("🛍️ Planejador de Compras (Cotas)")
         valor_disponivel = st.number_input("Quanto pretende investir hoje? (R$):", min_value=0.0, value=500.0, step=100.0, key="calc_aporte")
@@ -236,23 +238,25 @@ with tab_painel:
             st.write(f"Com **R$ {valor_disponivel:.2f}**, você consegue comprar:")
             st.dataframe(df_calc[['Ativo', 'Cotas', 'Ação', 'Troco']], use_container_width=True, hide_index=True)
             
+            # Destaque Mateus
             mateus_row = df_calc[df_calc['Ativo'] == "MATEUS"]
             if not mateus_row.empty:
                 qtd_mateus = mateus_row['Cotas'].values[0]
                 st.info(f"💡 **Foco GMAT3:** Seu aporte permite comprar **{qtd_mateus} cotas** do Grupo Mateus.")
 
-        # --- BOTÃO PARA SALVAR ---
+# --- BOTÃO PARA SALVAR (Cole aqui antes da calculadora de aporte) ---
         st.markdown("---")
         if st.button("💾 Salvar Minha Carteira"):
             dados_para_salvar = {}
+            # Salva o capital da XP
             dados_para_salvar["capital_xp"] = capital_xp
-            dados_para_salvar["g_joias"] = g_joias
-            dados_para_salvar["v_bens"] = v_bens
+            # Salva qtd e valor de cada ativo selecionado
             for nome in ativos_sel:
                 dados_para_salvar[f"q_{nome}"] = st.session_state[f"q_{nome}"]
                 dados_para_salvar[f"i_{nome}"] = st.session_state[f"i_{nome}"]
+            
             salvar_dados_usuario(dados_para_salvar)
-            st.success("✅ Tudo salvo!")
+            st.success("✅ Tudo salvo! Na próxima vez que abrir, seus dados estarão aqui.")
 
 # ==================== ABA 2: RADAR CARTEIRA MODELO ====================
 with tab_radar_modelo:
@@ -276,18 +280,74 @@ with tab_radar_modelo:
     st.progress(score_m / 100)
     st.write(f"Índice de Sobrepreço Modelo: **{int(score_m)}%**")
 
+    st.markdown("---")
+    st.subheader("🧮 Gestor de Carteira: Ativos Modelo")
+    capital_xp_m = st.number_input("💰 Capital na Corretora para Ativos Modelo (R$):", min_value=0.0, value=0.0, step=100.0, key="cap_huli")
+    ativos_sel_m = st.multiselect("Habilite ativos da Carteira Modelo:", df_radar_modelo["Ativo"].unique(), key="sel_huli")
+    
+    total_investido_acum_m, v_ativos_atual_m = 0, 0
+    lista_c_m, df_grafico_m = [], pd.DataFrame()
+    if ativos_sel_m:
+        cols_m = st.columns(2)
+        for i, nome in enumerate(ativos_sel_m):
+            with cols_m[i % 2]:
+                st.markdown(f"**{nome}**")
+                qtd_m = st.number_input(f"Qtd Cotas ({nome}):", min_value=0, key=f"q_m_{nome}")
+                investido_m = st.number_input(f"Total Investido R$ ({nome}):", min_value=0.0, key=f"i_m_{nome}")
+                info_m = df_radar_modelo[df_radar_modelo["Ativo"] == nome].iloc[0]
+                p_atual_m = info_m["V_Cru"]
+                pm_calc_m = investido_m / qtd_m if qtd_m > 0 else 0.0
+                v_agora_m = qtd_m * p_atual_m
+                total_investido_acum_m += investido_m
+                v_ativos_atual_m += v_agora_m
+                st.session_state.carteira_modelo[nome] = {"atual": v_agora_m}
+                lista_c_m.append({"Ativo": nome, "Qtd": qtd_m, "PM": f"{pm_calc_m:.2f}", "Total": f"{v_agora_m:.2f}", "Lucro": f"{(v_agora_m - investido_m):.2f}"})
+                df_grafico_m[nome] = yf.Ticker(info_m["Ticker_Raw"]).history(period="30d")['Close']
+        
+        troco_real_m = capital_xp_m - total_investido_acum_m
+        st.markdown(f"""<div class="mobile-table-container"><table class="rockefeller-table">
+            <thead><tr><th>Ativo</th><th>Qtd</th><th>PM</th><th>Valor Atual</th><th>Lucro/Prej</th></tr></thead>
+            <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>R$ {r['PM']}</td><td>R$ {r['Total']}</td><td>{r['Lucro']}</td></tr>" for r in lista_c_m])}</tbody>
+        </table></div>""", unsafe_allow_html=True)
+
+        st.subheader("💰 Patrimônio Global (Estratégia Modelo)")
+        patri_global_m = v_ativos_atual_m + troco_real_m
+        m1_m, m2_m = st.columns(2)
+        m1_m.metric("Total em Ativos Modelo", f"R$ {v_ativos_atual_m:,.2f}")
+        m2_m.metric("PATRIMÔNIO MODELO TOTAL", f"R$ {patri_global_m:,.2f}")
+        
+        # --- CORREÇÃO INTEGRADA: PROTEÇÃO DO GRÁFICO ---
+        if not df_grafico_m.empty and v_ativos_atual_m > 0:
+            try:
+                st.bar_chart(df_grafico_m.iloc[-1].fillna(0))
+            except Exception:
+                pass
+
 # ==================== ABA 3: ESTRATÉGIA HULI ====================
 with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
+    
     v_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, step=100.0, key="aporte_huli_final_v3")
+    
+    # Filtra apenas o que é prioridade (✅ COMPRAR)
     df_prioridade = df_radar_modelo[df_radar_modelo['Ação'] == "✅ COMPRAR"].copy()
     
     if df_prioridade.empty:
         st.warning("⚠️ No momento, nenhum ativo atingiu os critérios de COMPRA.")
     else:
         st.write(f"### 🛒 Plano de Execução e Renda Estimada")
+        
         html_huli = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-            <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Status</th><th>Cotas</th><th>Dividendos (DY)</th><th>Renda Mensal Est.</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Ativo</th>
+                    <th>Preço (R$)</th>
+                    <th>Status</th>
+                    <th>Cotas</th>
+                    <th>Dividendos (DY)</th>
+                    <th>Renda Mensal Est.</th>
+                </tr>
+            </thead>
             <tbody>"""
         
         total_renda_mensal = 0
@@ -297,24 +357,16 @@ with tab_huli:
             dy_decimal = float(r['DY'].replace('%', '').replace(',', '.')) / 100
             renda_est_mes = (cotas * preco_v * (dy_decimal / 12))
             total_renda_mensal += renda_est_mes
+            
             html_huli += f"<tr><td><b>{r['Ativo']}</b></td><td>R$ {r['Preço']}</td><td><b style='color:#00ff00'>{r['Ação']}</b></td><td><b style='color:#00d4ff'>{cotas} UN</b></td><td>{r['DY']}</td><td style='color:#f1c40f'>R$ {renda_est_mes:.2f}</td></tr>"
         
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
 
-        st.markdown("---")
-        col_m1, col_m2 = st.columns(2)
-        with col_m1:
-            st.metric("Total a Investir", f"R$ {v_aporte:,.2f}")
-        with col_m2:
-            st.metric("Renda Mensal (Est.)", f"R$ {total_renda_mensal:.2f}")
-
-        if st.button("💾 Salvar Plano de Aporte", key="btn_final_save"):
-            st.success("✅ Plano salvo com sucesso!")
-
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
+    st.write("Esta é a base de ativos que compõe o método dele para proteção e renda.")
     col1, col2 = st.columns(2)
     with col1:
         st.markdown('<div class="huli-category"><b>🐄 Vacas Leiteiras (Renda Passiva)</b><br><small>Foco em Dividendos e Estabilidade</small></div>', unsafe_allow_html=True)
@@ -358,13 +410,29 @@ with tab_backtest:
         c1.metric("Preço de Compra (Fundo)", f"R$ {preco_fundo:.2f}")
         c2.metric("Preço de Venda (Hoje)", f"R$ {p_atual:.2f}")
         c3.metric("Rendimento Realizado", f"{queda_max:.2f}%", delta=f"{queda_max:.2f}%")
+        st.success(f"📌 **Resultado:** Se você tivesse investido no momento de pânico deste mês em **{ativo_bt}**, teria lucrado **{queda_max:.2f}%** até o preço atual.")
 
 # ==================== ABA 7: MANUAL DE INSTRUÇÕES ====================
 with tab_manual:
     st.header("📖 Manual de Instruções - IA Rockefeller")
     with st.expander("🛰️ Radar de Ativos e Preço Justo", expanded=True):
         st.markdown("""
-        * **Preço Justo (Graham):** Calculado pela fórmula $V = \sqrt{22.5 \cdot LPA \cdot VPA}$.
-        * **Status Descontado:** Preço de mercado inferior ao Preço Justo.
-        * **Ação COMPRAR:** Ativo abaixo da média de 30 dias e abaixo do preço justo.
+        * **Preço Justo (Graham):** Calculado pela fórmula $V = \sqrt{22.5 \cdot LPA \cdot VPA}$. Indica o valor intrínseco do ativo.
+        * **Status Descontado:** Ocorre quando o preço de mercado é inferior ao Preço Justo.
+        * **Ação COMPRAR:** Recomendada apenas quando o ativo está abaixo da média de 30 dias e abaixo do preço justo.
+        """)
+    with st.expander("📊 Raio-X de Volatilidade"):
+        st.markdown("""
+        * **Dias A/B:** Quantidade de dias de Alta (Verde) e Baixa (Vermelho) no último mês.
+        * **🚨 Alerta RECORDE:** Dispara quando o preço atual toca ou cai abaixo da mínima histórica dos últimos 30 dias.
+        """)
+    with st.expander("🧬 DNA Financeiro"):
+        st.markdown("""
+        * **LPA (Lucro por Ação):** Quanto de lucro a empresa gera para cada ação.
+        * **VPA (Valor Patrimonial):** O valor real dos bens da empresa dividido pelas ações.
+        * **P/L:** Indica em quantos anos você recuperaria seu investimento através dos lucros.
+        """)
+    with st.expander("📈 Backtesting"):
+        st.markdown("""
+        Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
