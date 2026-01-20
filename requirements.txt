@@ -2,3 +2,6 @@ streamlit
 pandas
 numpy
 investpy
+plotly
+yfinance
+pandas_ta
