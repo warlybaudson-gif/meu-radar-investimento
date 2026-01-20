@@ -8,13 +8,19 @@ import os
 
 # Funções para Persistência de Dados
 def salvar_dados_usuario(dados):
-    with open("carteira_salva.json", "w") as f:
-        json.dump(dados, f)
+    try:
+        with open("carteira_salva.json", "w") as f:
+            json.dump(dados, f, indent=4) # Adicionei indent para o arquivo ficar legível
+    except Exception as e:
+        st.error(f"Erro ao salvar: {e}")
 
 def carregar_dados_usuario():
     if os.path.exists("carteira_salva.json"):
-        with open("carteira_salva.json", "r") as f:
-            return json.load(f)
+        try:
+            with open("carteira_salva.json", "r") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, Exception):
+            return {} # Se o arquivo estiver corrompido, ele retorna vazio em vez de travar
     return {}
 
 # Carrega os dados salvos ao iniciar
@@ -26,10 +32,11 @@ st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #ffffff; }
+    /* Adicionado min-width para evitar que as colunas sumam em telas pequenas */
     .stMarkdown, .stTable, td, th, p, label { color: #ffffff !important; white-space: nowrap !important; }
     .mobile-table-container { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
     .rockefeller-table {
-        width: 100%; border-collapse: collapse; font-family: 'Courier New', Courier, monospace;
+        width: 100%; min-width: 600px; border-collapse: collapse; font-family: 'Courier New', Courier, monospace;
         margin-bottom: 20px; font-size: 0.85rem;
     }
     .rockefeller-table th { background-color: #1a1a1a; color: #58a6ff !important; text-align: center !important; padding: 10px; border-bottom: 2px solid #333; }
@@ -55,6 +62,8 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
 
 # --- PROCESSAMENTO DE DADOS ---
 
+# Dicionário de Tickers da Carteira Modelo Huli
+# Nota: Mantendo o sufixo .SA para compatibilidade com bibliotecas de backup (yfinance)
 modelo_huli_tickers = {
     "TAESA": "TAEE11.SA", "ENGIE": "EGIE3.SA", "ALUPAR": "ALUP11.SA",
     "SANEPAR": "SAPR11.SA", "SABESP": "SBSP3.SA", "BANCO DO BRASIL": "BBAS3.SA",
@@ -67,10 +76,16 @@ modelo_huli_tickers = {
     "GARE11": "GARE11.SA"
 }
 
+# Ativos Estratégicos (Commodities, Cripto e Tech)
 ativos_estrategicos = {
-    "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "BTC-USD": "BTC-USD", 
-    "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", "Nióbio": "NGLOY", 
-    "Grafeno": "FGPHF", "Câmbio USD/BRL": "USDBRL=X"
+    "PETR4.SA": "PETR4.SA", 
+    "VALE3.SA": "VALE3.SA", 
+    "BTC-USD": "BTC-USD", 
+    "Nvidia": "NVDA", 
+    "Jóias (Ouro)": "GC=F", 
+    "Nióbio": "NGLOY", 
+    "Grafeno": "FGPHF", 
+    "Câmbio USD/BRL": "USDBRL=X"
 }
 
 tickers_map = {**ativos_estrategicos, **modelo_huli_tickers}
@@ -329,3 +344,4 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
