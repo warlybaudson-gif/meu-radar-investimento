@@ -135,7 +135,18 @@ with tab1:
 
         # ===== TABELA PRINCIPAL =====
         st.markdown("### 📊 Visão Consolidada")
-        st.dataframe(df[['Ativo','Preço','Justo','Status','Ação']], use_container_width=True)
+        # ===== SINAL OPERACIONAL =====
+        df_exec = df.copy()
+        def sinal(row):
+            if row['Preço'] < row['Justo'] * 0.85:
+                return "🟢 COMPRAR"
+            elif row['Preço'] > row['Justo'] * 1.10:
+                return "🔴 VENDER"
+            else:
+                return "🟡 ESPERAR"
+        df_exec['Decisão'] = df_exec.apply(sinal, axis=1)
+
+        st.dataframe(df_exec[['Ativo','Preço','Justo','Status','Decisão']], use_container_width=True)
 
         st.markdown("---")
 
