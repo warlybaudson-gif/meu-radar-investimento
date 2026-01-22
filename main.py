@@ -559,3 +559,4 @@ with tab_manual:
         * **LPA (Lucro por Ação):** Quanto de lucro a empresa gera para cada ação.
         * **VPA (Valor Patrimonial
 
+
