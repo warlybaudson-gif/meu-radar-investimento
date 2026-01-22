@@ -115,32 +115,58 @@ df = calcular_dados(ativos)
 
 # ==================== ABA 1 ====================
 with tab1:
-    st.subheader("🛰️ Radar de Ativos Estratégicos")
-    if not df.empty:
-        st.markdown("### Visão Geral")
+    st.subheader("🧠 Terminal Executivo — Centro de Decisão")
+
+    if df.empty:
+        st.warning("Sem dados para exibir")
+    else:
+        # ===== KPIs =====
+        col1, col2, col3, col4 = st.columns(4)
+        descontados = len(df[df['Status'] == "✅ DESCONTADO"])
+        sobre = len(df[df['Status'] == "❌ SOBREPREÇO"])
+        margem_media = ((df['Justo'] - df['Preço']) / df['Justo']).mean() * 100
+
+        col1.metric("Ativos Descontados", descontados)
+        col2.metric("Ativos Sobrepreço", sobre)
+        col3.metric("Margem Média (%)", f"{margem_media:.1f}%")
+        col4.metric("Total Monitorado", len(df))
+
+        st.markdown("---")
+
+        # ===== TABELA PRINCIPAL =====
+        st.markdown("### 📊 Visão Consolidada")
         st.dataframe(df[['Ativo','Preço','Justo','Status','Ação']], use_container_width=True)
 
         st.markdown("---")
-        st.subheader("🌡️ Sentimento de Mercado")
-        caros = len(df[df['Status'] == "❌ SOBREPREÇO"])
-        score = (caros / len(df)) * 100 if len(df) > 0 else 0
-        st.progress(score / 100)
-        st.write(f"Índice de ativos sobreprecificados: **{int(score)}%**")
+
+        # ===== RANKING =====
+        st.markdown("### 🏆 Ranking por Margem de Segurança")
+        df_rank = df.copy()
+        df_rank['Margem'] = (df_rank['Justo'] - df_rank['Preço']) / df_rank['Justo']
+        df_rank = df_rank.sort_values('Margem', ascending=False)
+        st.dataframe(df_rank[['Ativo','Preço','Justo','Margem']], use_container_width=True)
 
         st.markdown("---")
-        st.subheader("🧮 Gestor de Carteira")
-        capital = st.number_input("Capital total disponível (R$)", value=dados_salvos.get("capital", 0.0), step=100.0)
 
-        total_atual = 0
-        for _, r in df.iterrows():
-            qtd = st.number_input(f"Qtd de {r['Ativo']}", min_value=0, key=f"q_{r['Ativo']}")
-            total_atual += qtd * r['V_Cru']
+        # ===== ALERTAS =====
+        st.markdown("### ⚠️ Alertas Inteligentes")
+        for _, r in df_rank.iterrows():
+            if r['Margem'] > 0.25:
+                st.success(f"{r['Ativo']} com alta margem de segurança")
+            elif r['Margem'] < 0:
+                st.error(f"{r['Ativo']} acima do valor justo")
 
-        st.metric("Valor Atual da Carteira", f"R$ {total_atual:,.2f}")
+        st.markdown("---")
 
-        if st.button("💾 Salvar Aba 1"):
+        # ===== GESTÃO =====
+        st.markdown("### 🧮 Gestão de Capital")
+        capital = st.number_input("Capital total (R$)", value=dados_salvos.get("capital", 0.0), step=100.0)
+        alocacao = capital / max(descontados, 1)
+        st.info(f"Sugestão de alocação por ativo descontado: R$ {alocacao:,.2f}")
+
+        if st.button("💾 Salvar Painel Executivo"):
             salvar_dados_usuario({"capital": capital})
-            st.success("Dados da Aba 1 salvos")
+            st.success("Painel salvo com sucesso")
 
 # ==================== ABA 2 ====================
 with tab2:
