@@ -65,8 +65,19 @@ def calcular_dados(lista):
     res = []
     for nome, t in lista.items():
         hist = carregar_historico(t)
+
+        # Garante que o ativo apareça mesmo sem dados
         if hist.empty:
+            res.append({
+                "Ativo": nome,
+                "Preço": np.nan,
+                "Justo": np.nan,
+                "Status": "⚠️ SEM DADOS",
+                "Ação": "🟡 ESPERAR",
+                "V_Cru": 0
+            })
             continue
+
         try:
             info = yf.Ticker(t).fast_info
         except:
