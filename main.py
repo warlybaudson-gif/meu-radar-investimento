@@ -192,44 +192,171 @@ with tab1:
 
 # ==================== ABA 2 ====================
 with tab2:
-    st.subheader("🔍 Radar de Oportunidades")
-    st.dataframe(df[df['Ação'] == "✅ COMPRAR"], use_container_width=True)
+    st.subheader("🔍 Radar de Oportunidades — Foco em Ação")
+
+    if df.empty:
+        st.warning("Sem dados disponíveis")
+    else:
+        df_radar = df.copy()
+        df_radar['Margem'] = (df_radar['Justo'] - df_radar['Preço']) / df_radar['Justo']
+
+        # Critério de oportunidade
+        oportunidades = df_radar[df_radar['Margem'] > 0.15].sort_values('Margem', ascending=False)
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Oportunidades", len(oportunidades))
+        col2.metric("Margem Média", f"{oportunidades['Margem'].mean()*100:.1f}%" if not oportunidades.empty else "0%")
+        col3.metric("Melhor Margem", f"{oportunidades['Margem'].max()*100:.1f}%" if not oportunidades.empty else "0%")
+
+        st.markdown("---")
+
+        st.markdown("### 🟢 Ativos com Margem de Segurança")
+        if oportunidades.empty:
+            st.info("Nenhum ativo com margem suficiente no momento")
+        else:
+            st.dataframe(
+                oportunidades[['Ativo','Preço','Justo','Margem']],
+                use_container_width=True
+            )
 
 # ==================== ABA 3 ====================
 with tab3:
-    st.subheader("🎯 Estratégia de Aporte")
-    aporte = st.number_input("Valor mensal para investir", 0.0, step=100.0)
-    if aporte > 0 and not df.empty:
-        st.write(df[['Ativo', 'Preço', 'Ação']])
+    st.subheader("🎯 Estratégia de Aporte — Plano de Execução")
+
+    if df.empty:
+        st.warning("Sem dados para montar estratégia")
+    else:
+        df_plan = df.copy()
+        df_plan['Margem'] = (df_plan['Justo'] - df_plan['Preço']) / df_plan['Justo']
+        df_plan = df_plan[df_plan['Margem'] > 0]
+
+        aporte = st.number_input("Aporte mensal disponível (R$)", min_value=0.0, step=100.0)
+
+        if aporte <= 0:
+            st.info("Informe um valor de aporte para gerar a estratégia")
+        else:
+            # Prioriza maiores margens
+            df_plan = df_plan.sort_values('Margem', ascending=False)
+            pesos = df_plan['Margem'] / df_plan['Margem'].sum()
+            df_plan['Aporte Sugerido'] = pesos * aporte
+
+            st.markdown("### 📌 Distribuição Recomendada")
+            st.dataframe(
+                df_plan[['Ativo','Preço','Justo','Margem','Aporte Sugerido']],
+                use_container_width=True
+            )
+
+            st.markdown("---")
+            st.markdown("### 🧠 Lógica da Estratégia")
+            st.markdown("""
+            • Capital distribuído proporcionalmente à margem de segurança  
+            • Quanto maior o desconto, maior o aporte  
+            • Estratégia defensiva, focada em valor
+            """)
 
 # ==================== ABA 4 ====================
 with tab4:
-    st.subheader("🏦 Minha Carteira")
-    capital = st.number_input("Capital disponível", value=dados_salvos.get("capital", 0.0))
-    if st.button("💾 Salvar Carteira"):
-        salvar_dados_usuario({"capital": capital})
-        st.success("Carteira salva")
+    st.subheader("🏦 Carteira — Posições Reais")
+
+    if df.empty:
+        st.warning("Sem dados de ativos")
+    else:
+        st.markdown("### 📥 Registro de Posições")
+        carteira = []
+        valor_total = 0.0
+
+        for _, r in df.iterrows():
+            col1, col2 = st.columns([2, 1])
+            with col1:
+                qtd = st.number_input(f"Quantidade de {r['Ativo']}", min_value=0, key=f"carteira_{r['Ativo']}")
+            with col2:
+                preco_medio = st.number_input(f"Preço médio {r['Ativo']}", min_value=0.0, step=0.1, key=f"pm_{r['Ativo']}")
+
+            valor_atual = qtd * r['Preço'] if not pd.isna(r['Preço']) else 0
+            custo = qtd * preco_medio
+            pl = valor_atual - custo
+            valor_total += valor_atual
+
+            carteira.append({
+                "Ativo": r['Ativo'],
+                "Qtd": qtd,
+                "Preço Médio": preco_medio,
+                "Preço Atual": r['Preço'],
+                "Valor Atual": valor_atual,
+                "P/L": pl
+            })
+
+        df_cart = pd.DataFrame(carteira)
+
+        st.markdown("---")
+        st.markdown("### 📊 Visão Consolidada da Carteira")
+        st.dataframe(df_cart, use_container_width=True)
+
+        st.metric("💼 Valor Total da Carteira", f"R$ {valor_total:,.2f}")
+
+        if st.button("💾 Salvar Carteira"):
+            salvar_dados_usuario({"carteira": carteira})
+            st.success("Carteira salva com sucesso")
 
 # ==================== ABA 5 ====================
 with tab5:
-    st.subheader("🧬 DNA Financeiro")
-    for _, r in df.iterrows():
-        st.write(f"{r['Ativo']} → Preço Justo: R$ {r['Justo']}")
+    st.subheader("🧬 DNA Financeiro dos Ativos")
+
+    if df.empty:
+        st.warning("Sem dados para análise")
+    else:
+        perfis = []
+        for _, r in df.iterrows():
+            margem = (r['Justo'] - r['Preço']) / r['Justo'] if not pd.isna(r['Preço']) else 0
+            risco = "Alto" if r['Ativo'] in ['BTC'] else "Médio"
+            perfil = "Crescimento" if r['Ativo'] in ['NVDA','AAPL','BTC'] else "Valor"
+
+            perfis.append({
+                "Ativo": r['Ativo'],
+                "Perfil": perfil,
+                "Risco": risco,
+                "Margem Segurança": f"{margem*100:.1f}%"
+            })
+
+        st.dataframe(pd.DataFrame(perfis), use_container_width=True)
 
 # ==================== ABA 6 ====================
 with tab6:
-    st.subheader("📈 Backtesting")
-    if not df.empty:
-        ativo = st.selectbox("Ativo", df['Ativo'])
-        st.info(f"Simulação simples para {ativo}")
+    st.subheader("📈 Backtesting Simplificado")
+
+    ativo_bt = st.selectbox("Selecione o ativo", df['Ativo'].unique())
+    df_bt = df[df['Ativo']==ativo_bt]
+
+    if not df_bt.empty:
+        preco = df_bt.iloc[0]['Preço']
+        fundo = df_bt.iloc[0]['Preço'] * 0.85
+        retorno = ((preco - fundo)/fundo)*100
+
+        c1,c2,c3 = st.columns(3)
+        c1.metric("Compra no fundo", f"R$ {fundo:.2f}")
+        c2.metric("Preço atual", f"R$ {preco:.2f}")
+        c3.metric("Retorno", f"{retorno:.1f}%")
 
 # ==================== ABA 7 ====================
 with tab7:
-    st.subheader("📖 Manual")
-    st.markdown("""
-    **IA Rockefeller**
+    st.subheader("📖 Manual de Uso – IA Rockefeller")
 
-    • Compra quando preço < média e < valor justo
-    • Foco em margem de segurança
-    • Pensamento de longo prazo
+    st.markdown("""
+    **Aba 1 – Painel Geral**  
+    Mostra todos os ativos monitorados, com preço justo e ação sugerida.
+
+    **Aba 2 – Radar Carteira Modelo**  
+    Foco nos ativos selecionados para estratégia defensiva.
+
+    **Aba 3 – Estratégia Huli**  
+    Direcionamento prático de aportes.
+
+    **Aba 4 – Carteira Modelo**  
+    Estrutura conceitual de diversificação.
+
+    **Aba 5 – DNA Financeiro**  
+    Classificação por risco, perfil e margem de segurança.
+
+    **Aba 6 – Backtesting**  
+    Simulação simples de compra em pânico.
     """)
