@@ -85,43 +85,72 @@ if "carteira_modelo" not in st.session_state:
 with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
 
-    if df_radar.empty:
-        st.warning("⚠️ Dados de mercado indisponíveis no momento.")
-    else:
-        html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-            <thead>
-                <tr>
-                    <th>Empresa</th><th>Ativo</th><th>Preço</th><th>Justo</th>
-                    <th>DY</th><th>Status</th><th>Ação</th>
-                </tr>
-            </thead>
-            <tbody>
-            {"".join([
-                f"<tr><td>{r['Empresa']}</td><td>{r['Ativo']}</td><td>{r['Preço']}</td>"
-                f"<td>{r['Justo']}</td><td>{r['DY']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>"
-                for _, r in df_radar.iterrows()
-            ])}
-            </tbody>
-        </table></div>"""
-        st.markdown(html_radar, unsafe_allow_html=True)
+linhas_radar = ""
+for _, r in df_radar.iterrows():
+    linhas_radar += (
+        f"<tr>"
+        f"<td>{r['Empresa']}</td>"
+        f"<td>{r['Ativo']}</td>"
+        f"<td>{r['Preço']}</td>"
+        f"<td>{r['Justo']}</td>"
+        f"<td>{r['DY']}</td>"
+        f"<td>{r['Status M']}</td>"
+        f"<td>{r['Ação']}</td>"
+        f"</tr>"
+    )
 
-        st.subheader("📊 Raio-X de Volatilidade")
-        html_vol = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-            <thead>
-                <tr><th>Ativo</th><th>Dias A/B</th><th>Pico</th><th>Fundo</th><th>Alerta</th></tr>
-            </thead>
-            <tbody>
-            {"".join([
-                f"<tr><td>{r['Ativo']}</td>"
-                f"<td>🟢{r['Dias_A']}/🔴{r['Dias_B']}</td>"
-                f"<td>+{r['Var_Max']:.2f}%</td>"
-                f"<td>{r['Var_Min']:.2f}%</td>"
-                f"<td>{'🚨 RECORDE' if r['Var_H'] <= (r['Var_Min']*0.98) and r['Var_H'] < 0 else 'Normal'}</td></tr>"
-                for _, r in df_radar.iterrows()
-            ])}
-            </tbody>
-        </table></div>"""
-        st.markdown(html_vol, unsafe_allow_html=True)
+html_radar = (
+    "<div class='mobile-table-container'>"
+    "<table class='rockefeller-table'>"
+    "<thead>"
+    "<tr>"
+    "<th>Empresa</th><th>Ativo</th><th>Preço</th>"
+    "<th>Justo</th><th>DY</th><th>Status</th><th>Ação</th>"
+    "</tr>"
+    "</thead>"
+    "<tbody>"
+    f"{linhas_radar}"
+    "</tbody>"
+    "</table>"
+    "</div>"
+)
+
+st.markdown(html_radar, unsafe_allow_html=True)
+
+       st.subheader("📊 Raio-X de Volatilidade")
+
+linhas_vol = ""
+for _, r in df_radar.iterrows():
+    alerta = (
+        "🚨 RECORDE"
+        if r['Var_H'] <= (r['Var_Min'] * 0.98) and r['Var_H'] < 0
+        else "Normal"
+    )
+
+    linhas_vol += (
+        f"<tr>"
+        f"<td>{r['Ativo']}</td>"
+        f"<td>🟢{r['Dias_A']}/🔴{r['Dias_B']}</td>"
+        f"<td>+{r['Var_Max']:.2f}%</td>"
+        f"<td>{r['Var_Min']:.2f}%</td>"
+        f"<td>{alerta}</td>"
+        f"</tr>"
+    )
+
+html_vol = (
+    "<div class='mobile-table-container'>"
+    "<table class='rockefeller-table'>"
+    "<thead>"
+    "<tr><th>Ativo</th><th>Dias A/B</th><th>Pico</th><th>Fundo</th><th>Alerta</th></tr>"
+    "</thead>"
+    "<tbody>"
+    f"{linhas_vol}"
+    "</tbody>"
+    "</table>"
+    "</div>"
+)
+
+st.markdown(html_vol, unsafe_allow_html=True)
 
         st.subheader("🌡️ Sentimento de Mercado")
         caros = len(df_radar[df_radar['Status M'] == "❌ SOBREPREÇO"])
@@ -529,3 +558,4 @@ with tab_manual:
         st.markdown("""
         * **LPA (Lucro por Ação):** Quanto de lucro a empresa gera para cada ação.
         * **VPA (Valor Patrimonial
+
