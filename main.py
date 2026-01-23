@@ -85,142 +85,142 @@ if "carteira_modelo" not in st.session_state:
 with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
 
-linhas_radar = ""
-for _, r in df_radar.iterrows():
-    linhas_radar += (
-        f"<tr>"
-        f"<td>{r['Empresa']}</td>"
-        f"<td>{r['Ativo']}</td>"
-        f"<td>{r['Preço']}</td>"
-        f"<td>{r['Justo']}</td>"
-        f"<td>{r['DY']}</td>"
-        f"<td>{r['Status M']}</td>"
-        f"<td>{r['Ação']}</td>"
-        f"</tr>"
+    linhas_radar = ""
+    for _, r in df_radar.iterrows():
+        linhas_radar += (
+            f"<tr>"
+            f"<td>{r['Empresa']}</td>"
+            f"<td>{r['Ativo']}</td>"
+            f"<td>{r['Preço']}</td>"
+            f"<td>{r['Justo']}</td>"
+            f"<td>{r['DY']}</td>"
+            f"<td>{r['Status M']}</td>"
+            f"<td>{r['Ação']}</td>"
+            f"</tr>"
+        )
+
+    html_radar = (
+        "<div class='mobile-table-container'>"
+        "<table class='rockefeller-table'>"
+        "<thead>"
+        "<tr>"
+        "<th>Empresa</th><th>Ativo</th><th>Preço</th>"
+        "<th>Justo</th><th>DY</th><th>Status</th><th>Ação</th>"
+        "</tr>"
+        "</thead>"
+        "<tbody>"
+        f"{linhas_radar}"
+        "</tbody>"
+        "</table>"
+        "</div>"
     )
 
-html_radar = (
-    "<div class='mobile-table-container'>"
-    "<table class='rockefeller-table'>"
-    "<thead>"
-    "<tr>"
-    "<th>Empresa</th><th>Ativo</th><th>Preço</th>"
-    "<th>Justo</th><th>DY</th><th>Status</th><th>Ação</th>"
-    "</tr>"
-    "</thead>"
-    "<tbody>"
-    f"{linhas_radar}"
-    "</tbody>"
-    "</table>"
-    "</div>"
-)
+    st.markdown(html_radar, unsafe_allow_html=True)
 
-st.markdown(html_radar, unsafe_allow_html=True)
+    st.subheader("📊 Raio-X de Volatilidade")
 
-       st.subheader("📊 Raio-X de Volatilidade")
+    linhas_vol = ""
+    for _, r in df_radar.iterrows():
+        alerta = (
+            "🚨 RECORDE"
+            if r['Var_H'] <= (r['Var_Min'] * 0.98) and r['Var_H'] < 0
+            else "Normal"
+        )
 
-linhas_vol = ""
-for _, r in df_radar.iterrows():
-    alerta = (
-        "🚨 RECORDE"
-        if r['Var_H'] <= (r['Var_Min'] * 0.98) and r['Var_H'] < 0
-        else "Normal"
+        linhas_vol += (
+            f"<tr>"
+            f"<td>{r['Ativo']}</td>"
+            f"<td>🟢{r['Dias_A']}/🔴{r['Dias_B']}</td>"
+            f"<td>+{r['Var_Max']:.2f}%</td>"
+            f"<td>{r['Var_Min']:.2f}%</td>"
+            f"<td>{alerta}</td>"
+            f"</tr>"
+        )
+
+    html_vol = (
+        "<div class='mobile-table-container'>"
+        "<table class='rockefeller-table'>"
+        "<thead>"
+        "<tr><th>Ativo</th><th>Dias A/B</th><th>Pico</th><th>Fundo</th><th>Alerta</th></tr>"
+        "</thead>"
+        "<tbody>"
+        f"{linhas_vol}"
+        "</tbody>"
+        "</table>"
+        "</div>"
     )
 
-    linhas_vol += (
-        f"<tr>"
-        f"<td>{r['Ativo']}</td>"
-        f"<td>🟢{r['Dias_A']}/🔴{r['Dias_B']}</td>"
-        f"<td>+{r['Var_Max']:.2f}%</td>"
-        f"<td>{r['Var_Min']:.2f}%</td>"
-        f"<td>{alerta}</td>"
-        f"</tr>"
+    st.markdown(html_vol, unsafe_allow_html=True)
+
+    st.subheader("🌡️ Sentimento de Mercado")
+    caros = len(df_radar[df_radar['Status M'] == "❌ SOBREPREÇO"])
+    score = (caros / len(df_radar)) * 100 if len(df_radar) > 0 else 0
+    st.progress(score / 100)
+    st.write(f"Índice de Ativos Caros: **{int(score)}%**")
+
+    st.markdown("---")
+    st.subheader("🧮 Gestor de Carteira Dinâmica")
+
+    capital_xp = st.number_input(
+        "💰 Capital Total na Corretora XP (R$):",
+        min_value=0.0,
+        value=dados_salvos.get("capital_xp", 0.0),
+        step=100.0
     )
 
-html_vol = (
-    "<div class='mobile-table-container'>"
-    "<table class='rockefeller-table'>"
-    "<thead>"
-    "<tr><th>Ativo</th><th>Dias A/B</th><th>Pico</th><th>Fundo</th><th>Alerta</th></tr>"
-    "</thead>"
-    "<tbody>"
-    f"{linhas_vol}"
-    "</tbody>"
-    "</table>"
-    "</div>"
-)
+    ativos_sel = st.multiselect(
+        "Habilite seus ativos:",
+        df_radar["Ativo"].unique(),
+        default=list(df_radar["Ativo"].unique()[:1])
+    )
 
-st.markdown(html_vol, unsafe_allow_html=True)
+    total_investido, valor_atual = 0.0, 0.0
+    lista_c, df_grafico = [], pd.DataFrame()
 
-        st.subheader("🌡️ Sentimento de Mercado")
-        caros = len(df_radar[df_radar['Status M'] == "❌ SOBREPREÇO"])
-        score = (caros / len(df_radar)) * 100 if len(df_radar) > 0 else 0
-        st.progress(score / 100)
-        st.write(f"Índice de Ativos Caros: **{int(score)}%**")
+    for nome in ativos_sel:
+        info = df_radar[df_radar["Ativo"] == nome]
+        if info.empty:
+            continue
 
-        st.markdown("---")
-        st.subheader("🧮 Gestor de Carteira Dinâmica")
-
-        capital_xp = st.number_input(
-            "💰 Capital Total na Corretora XP (R$):",
+        info = info.iloc[0]
+        qtd = st.number_input(f"Qtd ({nome})", min_value=0, value=dados_salvos.get(f"q_{nome}", 0))
+        investido = st.number_input(
+            f"Investido ({nome})",
             min_value=0.0,
-            value=dados_salvos.get("capital_xp", 0.0),
-            step=100.0
+            value=dados_salvos.get(f"i_{nome}", 0.0)
         )
 
-        ativos_sel = st.multiselect(
-            "Habilite seus ativos:",
-            df_radar["Ativo"].unique(),
-            default=list(df_radar["Ativo"].unique()[:1])
-        )
+        preco = info["V_Cru"]
+        pm = investido / qtd if qtd > 0 else 0.0
+        atual = qtd * preco
 
-        total_investido, valor_atual = 0.0, 0.0
-        lista_c, df_grafico = [], pd.DataFrame()
+        total_investido += investido
+        valor_atual += atual
 
-        for nome in ativos_sel:
-            info = df_radar[df_radar["Ativo"] == nome]
-            if info.empty:
-                continue
+        lista_c.append({
+            "Ativo": nome,
+            "Qtd": qtd,
+            "PM": f"{pm:.2f}",
+            "Total": f"{atual:.2f}",
+            "Lucro": f"{(atual - investido):.2f}"
+        })
 
-            info = info.iloc[0]
-            qtd = st.number_input(f"Qtd ({nome})", min_value=0, value=dados_salvos.get(f"q_{nome}", 0))
-            investido = st.number_input(
-                f"Investido ({nome})",
-                min_value=0.0,
-                value=dados_salvos.get(f"i_{nome}", 0.0)
-            )
+        hist = yf.Ticker(info["Ticker_Raw"]).history(period="30d")
+        if not hist.empty:
+            df_grafico[nome] = hist["Close"]
 
-            preco = info["V_Cru"]
-            pm = investido / qtd if qtd > 0 else 0.0
-            atual = qtd * preco
+    st.markdown(f"""<div class="mobile-table-container"><table class="rockefeller-table">
+        <thead><tr><th>Ativo</th><th>Qtd</th><th>PM</th><th>Total</th><th>Lucro</th></tr></thead>
+        <tbody>
+        {"".join([
+            f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>{r['PM']}</td><td>{r['Total']}</td><td>{r['Lucro']}</td></tr>"
+            for r in lista_c
+        ])}
+        </tbody>
+    </table></div>""", unsafe_allow_html=True)
 
-            total_investido += investido
-            valor_atual += atual
-
-            lista_c.append({
-                "Ativo": nome,
-                "Qtd": qtd,
-                "PM": f"{pm:.2f}",
-                "Total": f"{atual:.2f}",
-                "Lucro": f"{(atual - investido):.2f}"
-            })
-
-            hist = yf.Ticker(info["Ticker_Raw"]).history(period="30d")
-            if not hist.empty:
-                df_grafico[nome] = hist["Close"]
-
-        st.markdown(f"""<div class="mobile-table-container"><table class="rockefeller-table">
-            <thead><tr><th>Ativo</th><th>Qtd</th><th>PM</th><th>Total</th><th>Lucro</th></tr></thead>
-            <tbody>
-            {"".join([
-                f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>{r['PM']}</td><td>{r['Total']}</td><td>{r['Lucro']}</td></tr>"
-                for r in lista_c
-            ])}
-            </tbody>
-        </table></div>""", unsafe_allow_html=True)
-
-        if not df_grafico.empty:
-            st.line_chart(df_grafico)
+    if not df_grafico.empty:
+        st.line_chart(df_grafico)
 
 # ==================== ABA 2: RADAR CARTEIRA MODELO ====================
 with tab_radar_modelo:
@@ -558,5 +558,6 @@ with tab_manual:
         st.markdown("""
         * **LPA (Lucro por Ação):** Quanto de lucro a empresa gera para cada ação.
         * **VPA (Valor Patrimonial
+
 
 
