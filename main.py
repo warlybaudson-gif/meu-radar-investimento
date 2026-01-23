@@ -326,18 +326,67 @@ with tab_radar_modelo:
 # ==================== ABA 3: ESTRATÉGIA HULI ====================
 with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
-    valor_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, value=0.0, step=100.0)
-    if ativos_sel:
-        metas = {nome: st.slider(f"{nome} (%)", 0, 100, 100 // len(ativos_sel), key=f"meta_h_{nome}") for nome in ativos_sel}
-        if sum(metas.values()) == 100:
-            plano = []
-            for nome in ativos_sel:
-                v_at = st.session_state.carteira.get(nome, {"atual": 0})["atual"]
-                v_id = (v_ativos_atualizado + valor_aporte) * (metas[nome] / 100)
-                nec = v_id - v_at
-                plano.append({"Ativo": nome, "Ação": "APORTAR" if nec > 0 else "AGUARDAR", "Valor": f"R$ {max(0, nec):.2f}"})
-            st.table(pd.DataFrame(plano))
-
+    
+    v_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, step=100.0, key="aporte_huli_renda")
+    
+    # Filtra apenas o que é prioridade (✅ COMPRAR)
+    df_prioridade = df_radar_modelo[df_radar_modelo['Ação'] == "✅ COMPRAR"].copy()
+    
+    if df_prioridade.empty:
+        st.warning("⚠️ No momento, nenhum ativo atingiu os critérios de COMPRA. Aguarde uma oportunidade melhor.")
+    else:
+        st.write(f"### 🛒 Plano de Execução e Renda Estimada")
+        
+        html_huli = f"""<div class="mobile-table-container"><table class="rockefeller-table">
+            <thead>
+                <tr>
+                    <th>Ativo</th>
+                    <th>Preço (R$)</th>
+                    <th>Status</th>
+                    <th>Cotas</th>
+                    <th>Dividendos (DY)</th>
+                    <th>Renda Mensal Est.</th>
+                </tr>
+            </thead>
+            <tbody>"""
+        
+        qtd_ativos = len(df_prioridade)
+        valor_cada = v_aporte / qtd_ativos if qtd_ativos > 0 else 0
+        total_renda_mensal = 0
+        
+        for _, r in df_prioridade.iterrows():
+            preco_v = float(r['V_Cru'])
+            cotas = int(valor_cada // preco_v) if preco_v > 0 else 0
+            
+            # Cálculo da Renda Mensal Estimada
+            # Pegamos o DY anual, dividimos por 12 meses e aplicamos sobre o valor investido em cotas
+            dy_decimal = float(r['DY'].replace('%', '').replace(',', '.')) / 100
+            renda_est_mes = (cotas * preco_v * (dy_decimal / 12))
+            total_renda_mensal += renda_est_mes
+            
+            html_huli += f"""
+                <tr>
+                    <td><b>{r['Ativo']}</b></td>
+                    <td>R$ {r['Preço']}</td>
+                    <td style='color:#00ff00'><b>{r['Ação']}</b></td>
+                    <td style='color:#00d4ff'><b>{cotas} UN</b></td>
+                    <td>{r['DY']}</td>
+                    <td style='color:#f1c40f'>R$ {renda_est_mes:.2f}</td>
+                </tr>"""
+        
+        html_huli += "</tbody></table></div>"
+        st.markdown(html_huli, unsafe_allow_html=True)
+        
+        # --- RESUMO DA RENDA PASSIVA ---
+        st.markdown("---")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.metric("Total a Investir", f"R$ {(v_aporte):,.2f}")
+        with c2:
+            st.metric("Aumento na Renda Mensal (Est.)", f"R$ {total_renda_mensal:.2f}", help="Cálculo baseado no Dividend Yield anual dividido por 12.")
+            
+        st.success(f"💰 Com este aporte, você passará a receber aproximadamente **R$ {total_renda_mensal:.2f} a mais todos os meses** em dividendos!")
+        
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
     st.header("🏦 Ativos Diversificados (Onde o Tio Huli Investe)")
