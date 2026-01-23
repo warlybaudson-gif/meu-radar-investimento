@@ -555,9 +555,13 @@ with tab_manual:
         """)
 
     with st.expander("🧬 DNA Financeiro"):
-        st.markdown("""
-        * **LPA (Lucro por Ação):** Quanto de lucro a empresa gera para cada ação.
-        * **VPA (Valor Patrimonial
+    st.markdown("""
+    * **LPA (Lucro por Ação):** Quanto de lucro a empresa gera para cada ação.
+    * **VPA (Valor Patrimonial por Ação):** Valor contábil da empresa dividido pelo número de ações.
+    * **P/L:** Preço da ação dividido pelo LPA.
+    * **P/VP:** Preço da ação dividido pelo VPA.
+    """)
+
 
 
 
