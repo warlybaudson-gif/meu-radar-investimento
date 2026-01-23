@@ -29,41 +29,17 @@ st.markdown("""
 <style>
 .stApp { background-color: #000000; color: #ffffff; }
 .stMarkdown, .stTable, td, th, p, label { color: #ffffff !important; white-space: nowrap !important; }
-.mobile-table-container { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
-.rockefeller-table {
-    width: 100%; border-collapse: collapse;
-    font-family: 'Courier New', Courier, monospace;
-    margin-bottom: 20px; font-size: 0.85rem;
-}
-.rockefeller-table th {
-    background-color: #1a1a1a; color: #58a6ff !important;
-    text-align: center !important; padding: 10px;
-    border-bottom: 2px solid #333;
-}
-.rockefeller-table td {
-    padding: 10px; text-align: center !important;
-    border-bottom: 1px solid #222;
-}
-div[data-testid="stMetric"] {
-    background-color: #111111;
-    border: 1px solid #333333;
-    border-radius: 8px;
-    text-align: center;
-}
-.manual-section { border-left: 3px solid #58a6ff; padding-left: 15px; margin-bottom: 25px; }
-.huli-category {
-    background-color: #1a1a1a;
-    padding: 15px;
-    border-radius: 5px;
-    border-left: 4px solid #58a6ff;
-    margin: 10px 0;
-}
+.mobile-table-container { overflow-x: auto; width: 100%; }
+.rockefeller-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.rockefeller-table th { background-color: #1a1a1a; color: #58a6ff; padding: 10px; }
+.rockefeller-table td { padding: 10px; border-bottom: 1px solid #222; }
+.huli-category { background:#1a1a1a; padding:15px; border-left:4px solid #58a6ff; margin:10px 0; }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("💰 IA Rockefeller")
 
-# ==================== ABAS (7) ====================
+# ==================== ABAS ====================
 tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_manual = st.tabs([
     "📊 Painel de Controle",
     "🔍 Radar Carteira Modelo",
@@ -78,14 +54,13 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
 if "carteira" not in st.session_state:
     st.session_state.carteira = {}
 
-# ==================== DADOS BASE (PROVISÓRIO / SAFE) ====================
+if "carteira_modelo" not in st.session_state:
+    st.session_state.carteira_modelo = {}
+
 if "df_radar" not in st.session_state:
     st.session_state.df_radar = pd.DataFrame()
 
 df_radar = st.session_state.df_radar
-
-if "carteira_modelo" not in st.session_state:
-    st.session_state.carteira_modelo = {}
 
 # ==================== ABA 1: PAINEL DE CONTROLE ====================
 with tab_painel:
@@ -96,146 +71,110 @@ with tab_painel:
     else:
         linhas_radar = ""
         for _, r in df_radar.iterrows():
-            linhas_radar += (
-                f"<tr>"
-                f"<td>{r['Empresa']}</td>"
-                f"<td>{r['Ativo']}</td>"
-                f"<td>{r['Preço']}</td>"
-                f"<td>{r['Justo']}</td>"
-                f"<td>{r['DY']}</td>"
-                f"<td>{r['Status M']}</td>"
-                f"<td>{r['Ação']}</td>"
-                f"</tr>"
-            )
+            linhas_radar += f"""
+            <tr>
+                <td>{r['Empresa']}</td>
+                <td>{r['Ativo']}</td>
+                <td>{r['Preço']}</td>
+                <td>{r['Justo']}</td>
+                <td>{r['DY']}</td>
+                <td>{r['Status M']}</td>
+                <td>{r['Ação']}</td>
+            </tr>
+            """
 
-        html_radar = (
-            "<div class='mobile-table-container'>"
-            "<table class='rockefeller-table'>"
-            "<thead>"
-            "<tr>"
-            "<th>Empresa</th><th>Ativo</th><th>Preço</th>"
-            "<th>Justo</th><th>DY</th><th>Status</th><th>Ação</th>"
-            "</tr>"
-            "</thead>"
-            "<tbody>"
-            f"{linhas_radar}"
-            "</tbody>"
-            "</table>"
-            "</div>"
-        )
-
-        st.markdown(html_radar, unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="mobile-table-container">
+        <table class="rockefeller-table">
+            <thead>
+                <tr>
+                    <th>Empresa</th><th>Ativo</th><th>Preço</th>
+                    <th>Justo</th><th>DY</th><th>Status</th><th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>{linhas_radar}</tbody>
+        </table>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.subheader("📊 Raio-X de Volatilidade")
 
     linhas_vol = ""
     for _, r in df_radar.iterrows():
-        alerta = (
-            "🚨 RECORDE"
-            if r['Var_H'] <= (r['Var_Min'] * 0.98) and r['Var_H'] < 0
-            else "Normal"
-        )
+        alerta = "🚨 RECORDE" if r['Var_H'] <= (r['Var_Min'] * 0.98) and r['Var_H'] < 0 else "Normal"
+        linhas_vol += f"""
+        <tr>
+            <td>{r['Ativo']}</td>
+            <td>🟢{r['Dias_A']}/🔴{r['Dias_B']}</td>
+            <td>+{r['Var_Max']:.2f}%</td>
+            <td>{r['Var_Min']:.2f}%</td>
+            <td>{alerta}</td>
+        </tr>
+        """
 
-        linhas_vol += (
-            f"<tr>"
-            f"<td>{r['Ativo']}</td>"
-            f"<td>🟢{r['Dias_A']}/🔴{r['Dias_B']}</td>"
-            f"<td>+{r['Var_Max']:.2f}%</td>"
-            f"<td>{r['Var_Min']:.2f}%</td>"
-            f"<td>{alerta}</td>"
-            f"</tr>"
-        )
-
-    html_vol = (
-        "<div class='mobile-table-container'>"
-        "<table class='rockefeller-table'>"
-        "<thead>"
-        "<tr><th>Ativo</th><th>Dias A/B</th><th>Pico</th><th>Fundo</th><th>Alerta</th></tr>"
-        "</thead>"
-        "<tbody>"
-        f"{linhas_vol}"
-        "</tbody>"
-        "</table>"
-        "</div>"
-    )
-
-    st.markdown(html_vol, unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="mobile-table-container">
+    <table class="rockefeller-table">
+        <thead>
+            <tr><th>Ativo</th><th>Dias A/B</th><th>Pico</th><th>Fundo</th><th>Alerta</th></tr>
+        </thead>
+        <tbody>{linhas_vol}</tbody>
+    </table>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.subheader("🌡️ Sentimento de Mercado")
 
-if 'Status M' in df_radar.columns and not df_radar.empty:
-    caros = len(df_radar[df_radar['Status M'] == "❌ SOBREPREÇO"])
-    score = (caros / len(df_radar)) * 100
-else:
-    score = 0
+    if 'Status M' in df_radar.columns and not df_radar.empty:
+        caros = len(df_radar[df_radar['Status M'] == "❌ SOBREPREÇO"])
+        score = (caros / len(df_radar)) * 100
+    else:
+        score = 0
 
-st.progress(score / 100)
-st.write(f"Índice de Ativos Caros: **{int(score)}%**")
+    st.progress(score / 100)
+    st.write(f"Índice de Ativos Caros: **{int(score)}%**")
 
-st.markdown("""
----
-""")
+    st.markdown("---")
     st.subheader("🧮 Gestor de Carteira Dinâmica")
 
-    capital_xp = st.number_input(
-        "💰 Capital Total na Corretora XP (R$):",
-        min_value=0.0,
-        value=dados_salvos.get("capital_xp", 0.0),
-        step=100.0
-    )
+    capital_xp = st.number_input("💰 Capital Total na Corretora XP (R$):", min_value=0.0, step=100.0)
 
-    ativos_sel = st.multiselect(
-        "Habilite seus ativos:",
-        df_radar["Ativo"].unique(),
-        default=list(df_radar["Ativo"].unique()[:1])
-    )
+    ativos_sel = st.multiselect("Habilite seus ativos:", df_radar["Ativo"].unique())
 
-    total_investido, valor_atual = 0.0, 0.0
     lista_c, df_grafico = [], pd.DataFrame()
 
     for nome in ativos_sel:
-        info = df_radar[df_radar["Ativo"] == nome]
-        if info.empty:
-            continue
-
-        info = info.iloc[0]
-        qtd = st.number_input(f"Qtd ({nome})", min_value=0, value=dados_salvos.get(f"q_{nome}", 0))
-        investido = st.number_input(
-            f"Investido ({nome})",
-            min_value=0.0,
-            value=dados_salvos.get(f"i_{nome}", 0.0)
-        )
+        info = df_radar[df_radar["Ativo"] == nome].iloc[0]
+        qtd = st.number_input(f"Qtd ({nome})", min_value=0)
+        investido = st.number_input(f"Investido ({nome})", min_value=0.0)
 
         preco = info["V_Cru"]
-        pm = investido / qtd if qtd > 0 else 0.0
         atual = qtd * preco
-
-        total_investido += investido
-        valor_atual += atual
 
         lista_c.append({
             "Ativo": nome,
             "Qtd": qtd,
-            "PM": f"{pm:.2f}",
+            "PM": f"{(investido/qtd if qtd else 0):.2f}",
             "Total": f"{atual:.2f}",
-            "Lucro": f"{(atual - investido):.2f}"
+            "Lucro": f"{(atual-investido):.2f}"
         })
 
         hist = yf.Ticker(info["Ticker_Raw"]).history(period="30d")
         if not hist.empty:
             df_grafico[nome] = hist["Close"]
 
-    st.markdown(f"""<div class="mobile-table-container"><table class="rockefeller-table">
-        <thead><tr><th>Ativo</th><th>Qtd</th><th>PM</th><th>Total</th><th>Lucro</th></tr></thead>
-        <tbody>
-        {"".join([
-            f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>{r['PM']}</td><td>{r['Total']}</td><td>{r['Lucro']}</td></tr>"
-            for r in lista_c
-        ])}
-        </tbody>
-    </table></div>""", unsafe_allow_html=True)
+    if lista_c:
+        st.markdown(f"""
+        <div class="mobile-table-container">
+        <table class="rockefeller-table">
+            <thead><tr><th>Ativo</th><th>Qtd</th><th>PM</th><th>Total</th><th>Lucro</th></tr></thead>
+            <tbody>
+            {''.join([f"<tr><td>{r['Ativo']}</td><td>{r['Qtd']}</td><td>{r['PM']}</td><td>{r['Total']}</td><td>{r['Lucro']}</td></tr>" for r in lista_c])}
+            </tbody>
+        </table>
+        </div>
+        """, unsafe_allow_html=True)
 
-    if not df_grafico.empty:
         st.line_chart(df_grafico)
 
 # ==================== ABA 2: RADAR CARTEIRA MODELO ====================
@@ -573,12 +512,3 @@ with tab_manual:
             "* **P/L:** Preço ÷ LPA\n"
             "* **P/VP:** Preço ÷ VPA"
         )
-
-
-
-
-
-
-
-
-
