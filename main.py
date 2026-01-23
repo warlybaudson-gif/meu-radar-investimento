@@ -538,29 +538,27 @@ with tab_manual:
     st.header("📖 Manual de Instruções - IA Rockefeller")
 
     with st.expander("🛰️ Radar de Ativos e Preço Justo", expanded=True):
-        st.markdown("""
-        * **Preço Justo (Graham):** Calculado pela fórmula  
-          $V = \\sqrt{22.5 \\cdot LPA \\cdot VPA}$.  
-          Indica o valor intrínseco do ativo.
-        * **Status Descontado:** Ocorre quando o preço de mercado é inferior ao Preço Justo.
-        * **Ação COMPRAR:** Recomendada apenas quando o ativo está abaixo da média de 30 dias
-          **e** abaixo do preço justo.
-        """)
+        st.markdown(
+            "* **Preço Justo (Graham):** Calculado pela fórmula V = √(22.5 × LPA × VPA)\n"
+            "* **Status Descontado:** Preço de mercado abaixo do valor justo\n"
+            "* **Ação COMPRAR:** Apenas quando abaixo da média de 30 dias e do preço justo"
+        )
 
     with st.expander("📊 Raio-X de Volatilidade"):
-        st.markdown("""
-        * **Dias A/B:** Quantidade de dias de Alta (🟢) e Baixa (🔴) no último mês.
-        * **🚨 Alerta RECORDE:** Dispara quando o preço atual toca ou cai abaixo
-          da mínima histórica dos últimos 30 dias.
-        """)
+        st.markdown(
+            "* **Dias A/B:** Dias de alta (🟢) e baixa (🔴) no mês\n"
+            "* **🚨 Alerta RECORDE:** Nova mínima dos últimos 30 dias"
+        )
 
     with st.expander("🧬 DNA Financeiro"):
-    st.markdown("""
-    * **LPA (Lucro por Ação):** Quanto de lucro a empresa gera para cada ação.
-    * **VPA (Valor Patrimonial por Ação):** Valor contábil da empresa dividido pelo número de ações.
-    * **P/L:** Preço da ação dividido pelo LPA.
-    * **P/VP:** Preço da ação dividido pelo VPA.
-    """)
+        st.markdown(
+            "* **LPA:** Lucro por ação\n"
+            "* **VPA:** Valor patrimonial por ação\n"
+            "* **P/L:** Preço ÷ LPA\n"
+            "* **P/VP:** Preço ÷ VPA"
+        )
+
+
 
 
 
