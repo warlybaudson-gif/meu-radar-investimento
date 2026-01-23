@@ -162,10 +162,15 @@ with tab_painel:
     st.markdown(html_vol, unsafe_allow_html=True)
 
     st.subheader("🌡️ Sentimento de Mercado")
+
+if 'Status M' in df_radar.columns and not df_radar.empty:
     caros = len(df_radar[df_radar['Status M'] == "❌ SOBREPREÇO"])
-    score = (caros / len(df_radar)) * 100 if len(df_radar) > 0 else 0
-    st.progress(score / 100)
-    st.write(f"Índice de Ativos Caros: **{int(score)}%**")
+    score = (caros / len(df_radar)) * 100
+else:
+    score = 0
+
+st.progress(score / 100)
+st.write(f"Índice de Ativos Caros: **{int(score)}%**")
 
     st.markdown("---")
     st.subheader("🧮 Gestor de Carteira Dinâmica")
@@ -566,6 +571,7 @@ with tab_manual:
             "* **P/L:** Preço ÷ LPA\n"
             "* **P/VP:** Preço ÷ VPA"
         )
+
 
 
 
