@@ -135,9 +135,13 @@ with tab_painel:
     st.write(f"Índice de Ativos Caros: **{int(score)}%**")
 
     st.markdown("---")
-    st.subheader("🧮 Gestor de Carteira Dinâmica")
+   # ===============================
+# 📊 Gestor de Carteira Dinâmica
+# ===============================
 
-    if df_radar is not None and not df_radar.empty:
+st.subheader("📊 Gestor de Carteira Dinâmica")
+
+if df_radar is not None and not df_radar.empty:
 
     ativos_sel = st.multiselect(
         "Habilite seus ativos:",
@@ -160,6 +164,7 @@ with tab_painel:
 
 else:
     st.warning("⚠️ Dados do radar ainda não carregados.")
+
 
     lista_c, df_grafico = [], pd.DataFrame()
 
@@ -536,5 +541,6 @@ with tab_manual:
             "* **P/L:** Preço ÷ LPA\n"
             "* **P/VP:** Preço ÷ VPA"
         )
+
 
 
