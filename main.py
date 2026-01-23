@@ -36,24 +36,35 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
     "📖 Manual de Instruções"
 ])
 
-# --- PROCESSAMENTO DE DADOS (INTEGRAL ORIGINAL) ---
-tickers_map = {
-    "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "MXRF11.SA": "MXRF11.SA", 
-    "BTC-USD": "BTC-USD", "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", 
-    "Nióbio": "NGLOY", "Grafeno": "FGPHF", "Câmbio USD/BRL": "USDBRL=X"
-}
+# --- PROCESSAMENTO DE DADOS (DICIONÁRIOS COM ATIVOS ABAIXO DE R$ 10) ---
 
+# Ativos da Carteira Modelo (Aba 2)
 modelo_huli_tickers = {
     "TAESA": "TAEE11.SA", "ENGIE": "EGIE3.SA", "ALUPAR": "ALUP11.SA",
     "SANEPAR": "SAPR11.SA", "SABESP": "SBSP3.SA", "BANCO DO BRASIL": "BBAS3.SA",
     "ITAÚ": "ITUB4.SA", "BB SEGURIDADE": "BBSE3.SA", "HGLG11": "HGLG11.SA",
     "XPML11": "XPML11.SA", "IVVB11": "IVVB11.SA", "APPLE": "AAPL",
-    # ADIÇÕES DE VAREJO (COTAS BARATAS/DIVIDENDOS)
-    "RENNER": "LREN3.SA",
-    "GRENDENE": "GRND3.SA",
-    "MATEUS": "GMAT3.SA",
-    "VISC11": "VISC11.SA"
+    "RENNER": "LREN3.SA", "GRENDENE": "GRND3.SA", "MATEUS": "GMAT3.SA", 
+    "VISC11": "VISC11.SA", "MAGALU": "MGLU3.SA", "XPLG11": "XPLG11.SA",
+    "MXRF11": "MXRF11.SA", "CPTS11": "CPTS11.SA", "VGHF11": "VGHF11.SA",
+    # --- ATIVOS COM COTAS MENORES QUE R$ 10,00 ---
+    "VIVA11": "VIVA11.SA",    # Fundo de Shoppings/Varejo (Cota ~R$ 1,00)
+    "KLBN4": "KLBN4.SA",      # Klabin (Papel/Celulose) - Cota ~R$ 4,50
+    "SAPR4": "SAPR4.SA",      # Sanepar (Saneamento) - Cota ~R$ 5,50
+    "TRPL4": "TRPL4.SA",      # Transmissão Paulista (Energia) - Cota ~R$ 26 (Ação inteira, ignore esta)
+    "GARE11": "GARE11.SA",    # Galpões Logísticos/Renda Urbana - Cota ~R$ 9,00
+    "MGLU3": "MGLU3.SA"       # Magalu - Cota ~R$ 1,50 a 2,50
 }
+
+# Ativos Estratégicos Originais
+ativos_estrategicos = {
+    "PETR4.SA": "PETR4.SA", "VALE3.SA": "VALE3.SA", "BTC-USD": "BTC-USD", 
+    "Nvidia": "NVDA", "Jóias (Ouro)": "GC=F", "Nióbio": "NGLOY", 
+    "Grafeno": "FGPHF", "Câmbio USD/BRL": "USDBRL=X"
+}
+
+# UNIFICAÇÃO: Faz a Aba 1 mostrar TUDO (Originais + Modelo)
+tickers_map = {**ativos_estrategicos, **modelo_huli_tickers}
 
 try:
     cambio_hoje = yf.Ticker("USDBRL=X").history(period="1d")['Close'].iloc[-1]
@@ -69,18 +80,24 @@ def calcular_dados(lista):
             info = ativo.info
             if not hist.empty:
                 p_atual = hist['Close'].iloc[-1]
+                # Puxa o Yield (Rendimento)
+                dy = info.get('dividendYield', 0) 
+                dy_formata = dy * 100 if dy else 0.0
+
                 if t in ["NVDA", "GC=F", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]:
                     p_atual = (p_atual / 31.1035) * cambio_hoje if t == "GC=F" else p_atual * cambio_hoje
+                
                 m_30 = hist['Close'].mean()
                 if t in ["NVDA", "NGLOY", "FGPHF", "AAPL", "BTC-USD"]: m_30 *= cambio_hoje
                 if t == "GC=F": m_30 = (m_30 / 31.1035) * cambio_hoje
+                
                 lpa, vpa = info.get('trailingEps', 0), info.get('bookValue', 0)
                 p_justo = np.sqrt(22.5 * lpa * vpa) if lpa > 0 and vpa > 0 else m_30
                 if t in ["NVDA", "AAPL"]: p_justo *= cambio_hoje
+                
                 status_m = "✅ DESCONTADO" if p_atual < p_justo else "❌ SOBREPREÇO"
                 variacoes = hist['Close'].pct_change() * 100
                 
-                # ADIÇÃO: LÓGICA DE AÇÃO (COMPRAR / VENDER / ESPERAR)
                 if p_atual < m_30 and status_m == "✅ DESCONTADO":
                     acao = "✅ COMPRAR"
                 elif p_atual > (p_justo * 1.20):
@@ -90,6 +107,7 @@ def calcular_dados(lista):
 
                 res.append({
                     "Ativo": nome_ex, "Ticker_Raw": t, "Preço": f"{p_atual:.2f}", "Justo": f"{p_justo:.2f}",
+                    "DY": f"{dy_formata:.2f}%", # Nova coluna de Dividendos
                     "Status M": status_m, "Ação": acao, "V_Cru": p_atual, "Var_Min": variacoes.min(),
                     "Var_Max": variacoes.max(), "Dias_A": (variacoes > 0).sum(), "Dias_B": (variacoes < 0).sum(),
                     "Var_H": variacoes.iloc[-1], "LPA": lpa, "VPA": vpa
@@ -106,8 +124,8 @@ if 'carteira_modelo' not in st.session_state: st.session_state.carteira_modelo =
 with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
     html_radar = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Status Mercado</th><th>Ação</th></tr></thead>
-        <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar.iterrows()])}</tbody>
+        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Dividendos (DY)</th><th>Status Mercado</th><th>Ação</th></tr></thead>
+        <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['DY']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar.iterrows()])}</tbody>
     </table></div>"""
     st.markdown(html_radar, unsafe_allow_html=True)
     
@@ -142,6 +160,15 @@ with tab_painel:
                 p_atual = info["V_Cru"]
                 pm_calc = investido / qtd if qtd > 0 else 0.0
                 v_agora = qtd * p_atual
+
+                # --- NOVO: ALERTA DE PREÇO MÉDIO PARA GMAT3 E OUTROS ---
+                if qtd > 0:
+                    if p_atual < pm_calc:
+                        desconto = ((pm_calc - p_atual) / pm_calc) * 100
+                        st.warning(f"📉 **OPORTUNIDADE EM {nome}:** Está {desconto:.1f}% abaixo do seu PM (R$ {pm_calc:.2f}). Hora de comprar mais cotas!")
+                    else:
+                        st.info(f"✅ **{nome}:** Acima do seu Preço Médio.")
+                # ------------------------------------------------------
                 total_investido_acumulado += investido
                 v_ativos_atualizado += v_agora
                 st.session_state.carteira[nome] = {"atual": v_agora}
@@ -170,12 +197,31 @@ with tab_painel:
         m3.metric("PATRIMÔNIO TOTAL", f"R$ {patri_global:,.2f}")
         st.line_chart(df_grafico)
 
+# --- CALCULADORA DE APORTE (PARA COMPRAR GMAT3 E OUTROS) ---
+        st.markdown("---")
+        st.subheader("🛍️ Planejador de Compras (Cotas)")
+        valor_disponivel = st.number_input("Quanto pretende investir hoje? (R$):", min_value=0.0, value=500.0, step=100.0, key="calc_aporte")
+        
+        if not df_radar.empty:
+            df_calc = df_radar[['Ativo', 'V_Cru', 'Ação']].copy()
+            df_calc['Cotas'] = (valor_disponivel // df_calc['V_Cru']).astype(int)
+            df_calc['Troco'] = (valor_disponivel % df_calc['V_Cru']).map("R$ {:.2f}".format)
+            
+            st.write(f"Com **R$ {valor_disponivel:.2f}**, você consegue comprar:")
+            st.dataframe(df_calc[['Ativo', 'Cotas', 'Ação', 'Troco']], use_container_width=True, hide_index=True)
+            
+            # Destaque Mateus
+            mateus_row = df_calc[df_calc['Ativo'] == "MATEUS"]
+            if not mateus_row.empty:
+                qtd_mateus = mateus_row['Cotas'].values[0]
+                st.info(f"💡 **Foco GMAT3:** Seu aporte permite comprar **{qtd_mateus} cotas** do Grupo Mateus.")
+
 # ==================== ABA 2: RADAR CARTEIRA MODELO ====================
 with tab_radar_modelo:
     st.subheader("🛰️ Radar de Ativos: Carteira Modelo Tio Huli")
     html_radar_m = f"""<div class="mobile-table-container"><table class="rockefeller-table">
-        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Status Mercado</th><th>Ação</th></tr></thead>
-        <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar_modelo.iterrows()])}</tbody>
+        <thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Preço Justo</th><th>Dividendos (DY)</th><th>Status Mercado</th><th>Ação</th></tr></thead>
+        <tbody>{"".join([f"<tr><td>{r['Ativo']}</td><td>{r['Preço']}</td><td>{r['Justo']}</td><td>{r['DY']}</td><td>{r['Status M']}</td><td>{r['Ação']}</td></tr>" for _, r in df_radar_modelo.iterrows()])}</tbody>
     </table></div>"""
     st.markdown(html_radar_m, unsafe_allow_html=True)
 
@@ -323,5 +369,3 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
-
-
