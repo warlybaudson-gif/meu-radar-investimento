@@ -172,7 +172,9 @@ else:
 st.progress(score / 100)
 st.write(f"Índice de Ativos Caros: **{int(score)}%**")
 
-    st.markdown("---")
+st.markdown("""
+---
+""")
     st.subheader("🧮 Gestor de Carteira Dinâmica")
 
     capital_xp = st.number_input(
@@ -571,6 +573,7 @@ with tab_manual:
             "* **P/L:** Preço ÷ LPA\n"
             "* **P/VP:** Preço ÷ VPA"
         )
+
 
 
 
