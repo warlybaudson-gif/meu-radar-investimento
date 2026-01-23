@@ -135,36 +135,32 @@ with tab_painel:
     st.write(f"Índice de Ativos Caros: **{int(score)}%**")
 
     st.markdown("---")
-   # ===============================
-# 📊 Gestor de Carteira Dinâmica
-# ===============================
+  
+    st.subheader("🧮 Gestor de Carteira Dinâmica")
 
-st.subheader("📊 Gestor de Carteira Dinâmica")
+    if df_radar is not None and not df_radar.empty:
 
-if df_radar is not None and not df_radar.empty:
+        ativos_sel = st.multiselect(
+            "Habilite seus ativos:",
+            df_radar["Ativo"].unique()
+        )
 
-    ativos_sel = st.multiselect(
-        "Habilite seus ativos:",
-        df_radar["Ativo"].unique()
-    )
+        capital_total = st.number_input(
+            "💰 Capital Total na Corretora XP (R$):",
+            min_value=0.0,
+            step=100.0,
+            format="%.2f"
+        )
 
-    capital_total = st.number_input(
-        "💰 Capital Total na Corretora XP (R$):",
-        min_value=0.0,
-        step=100.0,
-        format="%.2f"
-    )
+        if ativos_sel and capital_total > 0:
+            peso_por_ativo = capital_total / len(ativos_sel)
 
-    if ativos_sel and capital_total > 0:
-        peso_por_ativo = capital_total / len(ativos_sel)
+            st.markdown("### 📌 Distribuição Sugerida")
+            for ativo in ativos_sel:
+                st.write(f"• **{ativo}** → R$ {peso_por_ativo:,.2f}")
 
-        st.markdown("### 📌 Distribuição Sugerida")
-        for ativo in ativos_sel:
-            st.write(f"• **{ativo}** → R$ {peso_por_ativo:,.2f}")
-
-else:
-    st.warning("⚠️ Dados do radar ainda não carregados.")
-
+    else:
+        st.warning("⚠️ Dados do radar ainda não carregados.")
 
     lista_c, df_grafico = [], pd.DataFrame()
 
@@ -541,6 +537,7 @@ with tab_manual:
             "* **P/L:** Preço ÷ LPA\n"
             "* **P/VP:** Preço ÷ VPA"
         )
+
 
 
 
