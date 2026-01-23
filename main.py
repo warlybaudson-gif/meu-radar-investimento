@@ -78,6 +78,12 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
 if "carteira" not in st.session_state:
     st.session_state.carteira = {}
 
+# ==================== DADOS BASE (PROVISÓRIO / SAFE) ====================
+if "df_radar" not in st.session_state:
+    st.session_state.df_radar = pd.DataFrame()
+
+df_radar = st.session_state.df_radar
+
 if "carteira_modelo" not in st.session_state:
     st.session_state.carteira_modelo = {}
 
@@ -85,37 +91,40 @@ if "carteira_modelo" not in st.session_state:
 with tab_painel:
     st.subheader("🛰️ Radar de Ativos Estratégicos")
 
-    linhas_radar = ""
-    for _, r in df_radar.iterrows():
-        linhas_radar += (
-            f"<tr>"
-            f"<td>{r['Empresa']}</td>"
-            f"<td>{r['Ativo']}</td>"
-            f"<td>{r['Preço']}</td>"
-            f"<td>{r['Justo']}</td>"
-            f"<td>{r['DY']}</td>"
-            f"<td>{r['Status M']}</td>"
-            f"<td>{r['Ação']}</td>"
-            f"</tr>"
+    if df_radar.empty:
+        st.warning("⚠️ Dados do radar ainda não carregados.")
+    else:
+        linhas_radar = ""
+        for _, r in df_radar.iterrows():
+            linhas_radar += (
+                f"<tr>"
+                f"<td>{r['Empresa']}</td>"
+                f"<td>{r['Ativo']}</td>"
+                f"<td>{r['Preço']}</td>"
+                f"<td>{r['Justo']}</td>"
+                f"<td>{r['DY']}</td>"
+                f"<td>{r['Status M']}</td>"
+                f"<td>{r['Ação']}</td>"
+                f"</tr>"
+            )
+
+        html_radar = (
+            "<div class='mobile-table-container'>"
+            "<table class='rockefeller-table'>"
+            "<thead>"
+            "<tr>"
+            "<th>Empresa</th><th>Ativo</th><th>Preço</th>"
+            "<th>Justo</th><th>DY</th><th>Status</th><th>Ação</th>"
+            "</tr>"
+            "</thead>"
+            "<tbody>"
+            f"{linhas_radar}"
+            "</tbody>"
+            "</table>"
+            "</div>"
         )
 
-    html_radar = (
-        "<div class='mobile-table-container'>"
-        "<table class='rockefeller-table'>"
-        "<thead>"
-        "<tr>"
-        "<th>Empresa</th><th>Ativo</th><th>Preço</th>"
-        "<th>Justo</th><th>DY</th><th>Status</th><th>Ação</th>"
-        "</tr>"
-        "</thead>"
-        "<tbody>"
-        f"{linhas_radar}"
-        "</tbody>"
-        "</table>"
-        "</div>"
-    )
-
-    st.markdown(html_radar, unsafe_allow_html=True)
+        st.markdown(html_radar, unsafe_allow_html=True)
 
     st.subheader("📊 Raio-X de Volatilidade")
 
@@ -557,6 +566,7 @@ with tab_manual:
             "* **P/L:** Preço ÷ LPA\n"
             "* **P/VP:** Preço ÷ VPA"
         )
+
 
 
 
