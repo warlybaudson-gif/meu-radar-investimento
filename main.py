@@ -214,11 +214,15 @@ with tab_radar_modelo:
         key="cap_huli"
     )
 
-    ativos_sel_m = st.multiselect(
-        "Habilite ativos da Carteira Modelo:",
-        df_radar_modelo["Ativo"].unique(),
-        key="sel_huli"
+    if "Ativo" in df_radar.columns and not df_radar.empty:
+    ativos_sel = st.multiselect(
+        "Habilite seus ativos:",
+        df_radar["Ativo"].unique(),
+        default=list(df_radar["Ativo"].unique()[:1])
     )
+else:
+    ativos_sel = []
+    st.info("ℹ️ Ativos indisponíveis enquanto o radar não for carregado.")
 
     total_investido_acum_m, v_ativos_atual_m = 0.0, 0.0
     lista_c_m, df_grafico_m = [], pd.DataFrame()
@@ -512,3 +516,4 @@ with tab_manual:
             "* **P/L:** Preço ÷ LPA\n"
             "* **P/VP:** Preço ÷ VPA"
         )
+
