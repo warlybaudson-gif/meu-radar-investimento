@@ -2,6 +2,22 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
+import json
+import os
+
+# Funções para Persistência de Dados
+def salvar_dados_usuario(dados):
+    with open("carteira_salva.json", "w") as f:
+        json.dump(dados, f)
+
+def carregar_dados_usuario():
+    if os.path.exists("carteira_salva.json"):
+        with open("carteira_salva.json", "r") as f:
+            return json.load(f)
+    return {}
+
+# Carrega os dados salvos ao iniciar
+dados_salvos = carregar_dados_usuario()
 
 # 1. CONFIGURAÇÕES E ESTILO REFORÇADO (MANUTENÇÃO INTEGRAL)
 st.set_page_config(page_title="IA Rockefeller", page_icon="💰", layout="wide")
@@ -150,7 +166,7 @@ with tab_painel:
 
     st.markdown("---")
     st.subheader("🧮 Gestor de Carteira Dinâmica")
-    capital_xp = st.number_input("💰 Capital Total na Corretora XP (R$):", min_value=0.0, value=0.0, step=100.0)
+    capital_xp = st.number_input("💰 Capital Total na Corretora XP (R$):", min_value=0.0, value=dados_salvos.get("capital_xp", 0.0), step=100.0)
     ativos_sel = st.multiselect("Habilite seus ativos:", df_radar["Ativo"].unique(), default=["PETR4.SA"])
     
     total_investido_acumulado, v_ativos_atualizado = 0, 0
@@ -160,8 +176,13 @@ with tab_painel:
         for i, nome in enumerate(ativos_sel):
             with cols[i % 2]:
                 st.markdown(f"**{nome}**")
-                qtd = st.number_input(f"Qtd Cotas ({nome}):", min_value=0, key=f"q_{nome}")
-                investido = st.number_input(f"Total Investido R$ ({nome}):", min_value=0.0, key=f"i_{nome}")
+                
+                # BUSCA VALORES SALVOS (Adicionado aqui)
+                val_qtd_salvo = dados_salvos.get(f"q_{nome}", 0)
+                val_inv_salvo = dados_salvos.get(f"i_{nome}", 0.0)
+
+                qtd = st.number_input(f"Qtd Cotas ({nome}):", min_value=0, value=val_qtd_salvo, key=f"q_{nome}")
+                investido = st.number_input(f"Total Investido R$ ({nome}):", min_value=0.0, value=val_inv_salvo, key=f"i_{nome}")
                 info = df_radar[df_radar["Ativo"] == nome].iloc[0]
                 p_atual = info["V_Cru"]
                 pm_calc = investido / qtd if qtd > 0 else 0.0
@@ -190,8 +211,9 @@ with tab_painel:
         st.subheader("💰 Patrimônio Global")
         with st.sidebar:
             st.header("⚙️ Outros Bens")
-            g_joias = st.number_input("Ouro Físico (gramas):", min_value=0.0, value=0.0)
-            v_bens = st.number_input("Outros Bens/Imóveis (R$):", min_value=0.0, value=0.0)
+            # Agora eles buscam o que você salvou antes
+            g_joias = st.number_input("Ouro Físico (gramas):", min_value=0.0, value=dados_salvos.get("g_joias", 0.0))
+            v_bens = st.number_input("Outros Bens/Imóveis (R$):", min_value=0.0, value=dados_salvos.get("v_bens", 0.0))
 
         p_ouro = float(df_radar[df_radar['Ativo'] == "Jóias (Ouro)"]['V_Cru'].values[0])
         valor_ouro_total = g_joias * p_ouro
@@ -221,6 +243,20 @@ with tab_painel:
             if not mateus_row.empty:
                 qtd_mateus = mateus_row['Cotas'].values[0]
                 st.info(f"💡 **Foco GMAT3:** Seu aporte permite comprar **{qtd_mateus} cotas** do Grupo Mateus.")
+
+# --- BOTÃO PARA SALVAR (Cole aqui antes da calculadora de aporte) ---
+        st.markdown("---")
+        if st.button("💾 Salvar Minha Carteira"):
+            dados_para_salvar = {}
+            # Salva o capital da XP
+            dados_para_salvar["capital_xp"] = capital_xp
+            # Salva qtd e valor de cada ativo selecionado
+            for nome in ativos_sel:
+                dados_para_salvar[f"q_{nome}"] = st.session_state[f"q_{nome}"]
+                dados_para_salvar[f"i_{nome}"] = st.session_state[f"i_{nome}"]
+            
+            salvar_dados_usuario(dados_para_salvar)
+            st.success("✅ Tudo salvo! Na próxima vez que abrir, seus dados estarão aqui.")
 
 # ==================== ABA 2: RADAR CARTEIRA MODELO ====================
 with tab_radar_modelo:
