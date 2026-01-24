@@ -42,14 +42,15 @@ st.markdown("""
 st.title("💰 IA Rockefeller")
 
 # CRIAÇÃO DAS ABAS
-tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_manual = st.tabs([
+tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_manual, tab_historico = st.tabs([
     "📊 Painel de Controle", 
     "🔍 Radar Carteira Modelo",
     "🎯 Estratégia Huli", 
     "🏦 Carteira Modelo Huli",
     "🧬 DNA Financeiro",
     "📈 Backtesting",
-    "📖 Manual de Instruções"
+    "📖 Manual de Instruções",
+    "📜 Histórico de Aportes"
 ])
 
 # --- PROCESSAMENTO DE DADOS (DICIONÁRIOS COM ATIVOS ABAIXO DE R$ 10) ---
@@ -626,6 +627,3 @@ with tab_historico:
         c1.metric("💰 Valor Total Investido", f"R$ {total_investido:,.2f}")
         c2.metric("📈 Dividendos Mensais", f"R$ {renda_mensal:.2f}")
         c3.metric("📊 Retorno Mensal (%)", f"{percentual:.2f}%")
-
-
-
