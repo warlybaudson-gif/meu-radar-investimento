@@ -42,15 +42,14 @@ st.markdown("""
 st.title("💰 IA Rockefeller")
 
 # CRIAÇÃO DAS ABAS
-tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_manual, tab_historico = st.tabs([
+tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_manual = st.tabs([
     "📊 Painel de Controle", 
     "🔍 Radar Carteira Modelo",
     "🎯 Estratégia Huli", 
     "🏦 Carteira Modelo Huli",
     "🧬 DNA Financeiro",
     "📈 Backtesting",
-    "📖 Manual de Instruções",
-    "📜 Histórico de Aportes"
+    "📖 Manual de Instruções"
 ])
 
 # --- PROCESSAMENTO DE DADOS (DICIONÁRIOS COM ATIVOS ABAIXO DE R$ 10) ---
@@ -502,128 +501,3 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
-
-# ==================== NOVA ABA: HISTÓRICO DE APORTES ====================
-with tab_historico:
-    st.header("📜 Histórico de Aportes")
-
-    import datetime
-    import os
-    import pandas as pd
-
-    ARQ_APORTES = "historico_aportes.csv"
-
-    # -------------------- Funções Auxiliares --------------------
-    def carregar_aportes():
-        if os.path.exists(ARQ_APORTES):
-            return pd.read_csv(ARQ_APORTES)
-        return pd.DataFrame(columns=[
-            "Data", "Ativo", "Preço", "Cotas",
-            "Valor Investido", "DY", "Status no Aporte"
-        ])
-
-    def salvar_aportes(df):
-        df.to_csv(ARQ_APORTES, index=False)
-
-    df_aportes = carregar_aportes()
-
-    # -------------------- EXECUÇÃO DO APORTE --------------------
-    st.subheader("🛒 Executar Novo Aporte")
-
-    df_prioridade = df_radar_modelo[df_radar_modelo['Ação'] == "✅ COMPRAR"].copy()
-
-    if df_prioridade.empty:
-        st.info("No momento não há ativos elegíveis para compra.")
-    else:
-        v_aporte_exec = st.number_input(
-            "Valor disponível para este aporte (R$):",
-            min_value=0.0,
-            step=100.0,
-            key="aporte_execucao"
-        )
-
-        qtd_ativos = len(df_prioridade)
-        valor_por_ativo = v_aporte_exec / qtd_ativos if qtd_ativos > 0 else 0
-
-        selecoes = {}
-
-        st.markdown("### Ativos disponíveis")
-        for i, r in df_prioridade.iterrows():
-            preco = float(r['V_Cru'])
-            cotas_sugeridas = int(valor_por_ativo // preco) if preco > 0 else 0
-
-            col1, col2, col3 = st.columns([1, 2, 2])
-            with col1:
-                selecoes[r['Ativo']] = st.checkbox(r['Ativo'], key=f"check_{r['Ativo']}")
-            with col2:
-                st.write(f"Preço: R$ {r['Preço']}")
-            with col3:
-                st.write(f"Cotas sugeridas: {cotas_sugeridas}")
-
-        if st.button("📥 Confirmar Aporte"):
-            novos_registros = []
-
-            for _, r in df_prioridade.iterrows():
-                if selecoes.get(r['Ativo'], False):
-                    preco = float(r['V_Cru'])
-                    cotas = int(valor_por_ativo // preco) if preco > 0 else 0
-                    valor_investido = cotas * preco
-
-                    novos_registros.append({
-                        "Data": datetime.date.today().strftime("%d/%m/%Y"),
-                        "Ativo": r['Ativo'],
-                        "Preço": preco,
-                        "Cotas": cotas,
-                        "Valor Investido": valor_investido,
-                        "DY": r['DY'],
-                        "Status no Aporte": r['Ação']
-                    })
-
-            if novos_registros:
-                df_novo = pd.DataFrame(novos_registros)
-                df_aportes = pd.concat([df_aportes, df_novo], ignore_index=True)
-                salvar_aportes(df_aportes)
-                st.success("✅ Aporte registrado com sucesso!")
-            else:
-                st.warning("Nenhum ativo foi selecionado.")
-
-    # -------------------- HISTÓRICO --------------------
-    st.markdown("---")
-    st.subheader("📊 Histórico de Aportes Realizados")
-    if df_aportes.empty:
-        st.info("Nenhum aporte registrado ainda.")
-    else:
-        st.dataframe(df_aportes, use_container_width=True)
-
-    # -------------------- CONSOLIDAÇÃO --------------------
-    st.markdown("---")
-    st.subheader("📦 Total de Cotas por Ativo")
-
-    if not df_aportes.empty:
-        df_consolidado = (
-            df_aportes.groupby("Ativo", as_index=False)
-            .agg({"Cotas": "sum", "Valor Investido": "sum"})
-        )
-
-        st.dataframe(df_consolidado, use_container_width=True)
-
-    # -------------------- MÉTRICAS FINAIS --------------------
-    st.markdown("---")
-    st.subheader("📈 Resumo Geral")
-
-    if not df_aportes.empty:
-        total_investido = df_aportes["Valor Investido"].sum()
-
-        renda_mensal = 0
-        for _, r in df_consolidado.iterrows():
-            dy_atual = df_radar_modelo[df_radar_modelo['Ativo'] == r['Ativo']]['DY']
-            if not dy_atual.empty:
-                dy = float(dy_atual.values[0].replace('%', '').replace(',', '.')) / 100
-                renda_mensal += (r['Valor Investido'] * (dy / 12))
-
-        percentual = (renda_mensal / total_investido) * 100 if total_investido > 0 else 0
-
-        c1, c2, c3 = st.columns(3)
-        c1.metric("💰 Valor Total Investido", f"R$ {total_investido:,.2f}")
-        c2.metric("📈 Dividendos Mensais", f"R$ {renda_mensal:.2f}")
-        c3.metric("📊 Retorno Mensal (%)", f"{percentual:.2f}%")
