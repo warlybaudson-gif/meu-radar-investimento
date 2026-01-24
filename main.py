@@ -366,6 +366,7 @@ with tab_huli:
         
         # Exibição do resumo de renda total (opcional, mantendo o padrão visual)
         st.markdown(html_huli, unsafe_allow_html=True)
+        st.metric("Renda Mensal Estimada Total", f"R$ {total_renda_mensal:.2f}")
 
         # --- RESUMO DA RENDA PASSIVA ---
         st.markdown("---")
@@ -450,6 +451,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
