@@ -327,21 +327,44 @@ with tab_radar_modelo:
 with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
     v_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, step=100.0, key="aporte_huli_v3")
-    df_prioridade = df_radar_modelo[df_radar_modelo['Ação'] == "✅ COMPRAR"].copy()
+    
+    # MANTENDO O QUE JÁ ESTAVA: Ativos da estratégia Huli (df_radar_modelo)
+    df_huli_base = df_radar_modelo[df_radar_modelo['Ação'] == "✅ COMPRAR"].copy()
+    
+    # ADICIONANDO: Ativos mais baratos da ABA 1 (df_radar)
+    # Filtramos apenas os que estão com ação de COMPRA no Radar Estratégico
+    df_aba1_baratos = df_radar[df_radar['Ação'] == "✅ COMPRAR"].copy()
+    
+    # Unificando as listas para a Aba 3 sem remover o que já existia
+    import pandas as pd
+    df_prioridade = pd.concat([df_huli_base, df_aba1_baratos]).drop_duplicates(subset=['Ativo'])
+
     if df_prioridade.empty:
         st.warning("⚠️ No momento, nenhum ativo atingiu os critérios de COMPRA.")
     else:
         st.write(f"### 🛒 Plano de Execução e Renda Estimada")
         html_huli = f"""<div class="mobile-table-container"><table class="rockefeller-table"><thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Status</th><th>Cotas</th><th>Dividendos (DY)</th><th>Renda Mensal Est.</th></tr></thead><tbody>"""
+        
         total_renda_mensal = 0
         for _, r in df_prioridade.iterrows():
-            preco_v = float(r['V_Cru'])
+            # Tratamento para garantir que pegamos o valor numérico correto independente da origem do DF
+            try:
+                preco_v = float(r['V_Cru']) if 'V_Cru' in r else float(r['Preço'].replace('R$', '').replace('.', '').replace(',', '.'))
+                dy_text = r['DY']
+                dy_decimal = float(dy_text.replace('%', '').replace(',', '.')) / 100
+            except:
+                preco_v = 0
+                dy_decimal = 0
+                
             cotas = int(v_aporte / len(df_prioridade) // preco_v) if preco_v > 0 else 0
-            dy_decimal = float(r['DY'].replace('%', '').replace(',', '.')) / 100
             renda_est_mes = (cotas * preco_v * (dy_decimal / 12))
             total_renda_mensal += renda_est_mes
+            
             html_huli += f"<tr><td><b>{r['Ativo']}</b></td><td>R$ {r['Preço']}</td><td><b style='color:#00ff00'>{r['Ação']}</b></td><td><b style='color:#00d4ff'>{cotas} UN</b></td><td>{r['DY']}</td><td style='color:#f1c40f'>R$ {renda_est_mes:.2f}</td></tr>"
+            
         html_huli += "</tbody></table></div>"
+        
+        # Exibição do resumo de renda total (opcional, mantendo o padrão visual)
         st.markdown(html_huli, unsafe_allow_html=True)
 
         # --- RESUMO DA RENDA PASSIVA ---
@@ -427,6 +450,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
