@@ -328,41 +328,42 @@ with tab_huli:
     st.header("🎯 Estratégia Tio Huli: Próximos Passos")
     v_aporte = st.number_input("Quanto você pretende investir este mês? (R$):", min_value=0.0, step=100.0, key="aporte_huli_v3")
     
-    # MANTENDO O QUE JÁ ESTAVA (Aba 3 original)
-    df_huli_base = df_radar_modelo[df_radar_modelo['Ação'] == "✅ COMPRAR"].copy()
+    # 1. Pegamos o que já está na Aba 3
+    df_prioridade = df_radar_modelo[df_radar_modelo['Ação'] == "✅ COMPRAR"].copy()
     
-    # ADICIONANDO OS DA ABA 1 (Sem remover nada)
+    # 2. Pegamos os baratos da Aba 1
     df_aba1_baratos = df_radar[df_radar['Ação'] == "✅ COMPRAR"].copy()
     
-    import pandas as pd
-    # Unificamos garantindo que não há duplicados pelo Ticker/Ativo
-    df_prioridade = pd.concat([df_huli_base, df_aba1_baratos]).drop_duplicates(subset=['Ativo'])
+    # 3. Adicionamos os da Aba 1 na lista da Aba 3 (apenas se não estiverem lá repetidos)
+    if not df_aba1_baratos.empty:
+        # Criamos um formato compatível para evitar o KeyError das colunas que faltam
+        import pandas as pd
+        for _, row in df_aba1_baratos.iterrows():
+            if row['Ativo'] not in df_prioridade['Ativo'].values:
+                # Criamos uma nova linha compatível com a estrutura da Aba 3
+                nova_linha = pd.DataFrame([{
+                    'Ativo': row['Ativo'],
+                    'Preço': row['Preço'],
+                    'Ação': row['Ação'],
+                    'DY': row['DY'],
+                    'V_Cru': float(str(row['Preço']).replace('R$', '').replace('.', '').replace(',', '.').strip()) 
+                }])
+                df_prioridade = pd.concat([df_prioridade, nova_linha], ignore_index=True)
 
     if df_prioridade.empty:
         st.warning("⚠️ No momento, nenhum ativo atingiu os critérios de COMPRA.")
     else:
         st.write(f"### 🛒 Plano de Execução e Renda Estimada")
         html_huli = f"""<div class="mobile-table-container"><table class="rockefeller-table"><thead><tr><th>Ativo</th><th>Preço (R$)</th><th>Status</th><th>Cotas</th><th>Dividendos (DY)</th><th>Renda Mensal Est.</th></tr></thead><tbody>"""
-        
         total_renda_mensal = 0
-        n_ativos = len(df_prioridade)
         
+        # Agora o loop funciona sem erro pois todas as linhas têm 'V_Cru' e 'Ativo'
         for _, r in df_prioridade.iterrows():
-            # CORREÇÃO DO KEYERROR: 
-            # Se vier da Aba 3 original, usa 'V_Cru'. Se vier da Aba 1, limpa a string do 'Preço'.
-            if 'V_Cru' in r and not pd.isna(r['V_Cru']):
-                preco_v = float(r['V_Cru'])
-            else:
-                # Limpa o "R$" e converte para float o valor da Aba 1
-                preco_limpo = str(r['Preço']).replace('R$', '').replace('.', '').replace(',', '.').strip()
-                preco_v = float(preco_limpo) if preco_limpo else 0.0
-
-            # Cálculo de cotas e renda (Mantendo a sua lógica original)
-            cotas = int(v_aporte / n_ativos // preco_v) if preco_v > 0 else 0
+            preco_v = float(r['V_Cru'])
+            cotas = int(v_aporte / len(df_prioridade) // preco_v) if preco_v > 0 else 0
             
-            # Tratamento do DY para o cálculo
             dy_str = str(r['DY']).replace('%', '').replace(',', '.').strip()
-            dy_decimal = float(dy_str) / 100 if dy_str else 0.0
+            dy_decimal = float(dy_str) / 100 if dy_str else 0
             
             renda_est_mes = (cotas * preco_v * (dy_decimal / 12))
             total_renda_mensal += renda_est_mes
@@ -455,6 +456,7 @@ with tab_manual:
         st.markdown("""
         Esta aba localiza o ponto mais baixo que o ativo chegou no mês e calcula exatamente quanto você teria ganho se tivesse comprado naquele momento de queda máxima.
         """)
+
 
 
 
