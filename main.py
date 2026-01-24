@@ -343,7 +343,7 @@ with tab_huli:
             html_huli += f"<tr><td><b>{r['Ativo']}</b></td><td>R$ {r['Preço']}</td><td><b style='color:#00ff00'>{r['Ação']}</b></td><td><b style='color:#00d4ff'>{cotas} UN</b></td><td>{r['DY']}</td><td style='color:#f1c40f'>R$ {renda_est_mes:.2f}</td></tr>"
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
-        
+
         # --- RESUMO DA RENDA PASSIVA ---
         st.markdown("---")
         c1, c2 = st.columns(2)
