@@ -420,14 +420,23 @@ with c5:
     )
 
  # --- RESUMO DA RENDA PASSIVA ---
-        st.markdown("---")
-        c1, c2 = st.columns(2)
-        with c1:
-            st.metric("Total a Investir", f"R$ {(v_aporte):,.2f}")
-        with c2:
-            st.metric("Aumento na Renda Mensal (Est.)", f"R$ {total_renda_mensal:.2f}", help="Cálculo baseado no Dividend Yield anual dividido por 12.")
-            
-        st.success(f"💰 Com este aporte, você passará a receber aproximadamente **R$ {total_renda_mensal:.2f} a mais todos os meses** em dividendos!")
+    st.markdown("---")
+    c1, c2 = st.columns(2)
+
+    with c1:
+        st.metric("Total a Investir", f"R$ {(v_aporte):,.2f}")
+
+    with c2:
+        st.metric(
+            "Aumento na Renda Mensal (Est.)",
+            f"R$ {total_renda_mensal:.2f}",
+            help="Cálculo baseado no Dividend Yield anual dividido por 12."
+        )
+
+    st.success(
+        f"💰 Com este aporte, você passará a receber aproximadamente "
+        f"**R$ {total_renda_mensal:.2f} a mais todos os meses** em dividendos!"
+    )
 
 # ==================== ABA 4: CARTEIRA MODELO HULI ====================
 with tab_modelo:
@@ -627,4 +636,5 @@ with tab_historico:
         c1.metric("💰 Valor Total Investido", f"R$ {total_investido:,.2f}")
         c2.metric("📈 Dividendos Mensais", f"R$ {renda_mensal:.2f}")
         c3.metric("📊 Retorno Mensal (%)", f"{percentual:.2f}%")
+
 
