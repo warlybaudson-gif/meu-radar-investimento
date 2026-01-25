@@ -378,48 +378,48 @@ with tab_huli:
         html_huli += "</tbody></table></div>"
         st.markdown(html_huli, unsafe_allow_html=True)
         
-# ==================== COMPLEMENTO DA ESTRATÉGIA HULI (SEM ALTERAR LÓGICA) ====================
+    # ==================== COMPLEMENTO DA ESTRATÉGIA HULI (SEM ALTERAR LÓGICA) ====================
+    
+    # Cálculo do capital realmente investido
+    capital_investido = 0
+    
+    for _, r in df_prioridade.iterrows():
+        preco_v = float(r['V_Cru'])
+        valor_cada = v_aporte / len(df_prioridade) if len(df_prioridade) > 0 else 0
+        cotas = int(valor_cada // preco_v) if preco_v > 0 else 0
+        capital_investido += cotas * preco_v
+    
+    capital_nao_alocado = v_aporte - capital_investido
+    
+    # Yield mensal efetivo sobre o aporte
+    yield_mensal_efetivo = (total_renda_mensal / v_aporte * 100) if v_aporte > 0 else 0
 
-# Cálculo do capital realmente investido
-capital_investido = 0
+    st.markdown("---")
+    st.subheader("📊 Diagnóstico do Aporte (Estratégia Huli)")
+    
+    c3, c4, c5 = st.columns(3)
+    
+    with c3:
+        st.metric(
+            "Capital Investido",
+            f"R$ {capital_investido:,.2f}"
+        )
+    
+    with c4:
+        st.metric(
+            "Capital Não Alocado",
+            f"R$ {capital_nao_alocado:,.2f}",
+            help="Valor que não foi investido por falta de cotas inteiras."
+        )
+    
+    with c5:
+        st.metric(
+            "Yield Mensal Efetivo",
+            f"{yield_mensal_efetivo:.2f}%",
+            help="Renda mensal estimada dividida pelo valor total do aporte."
+        )
 
-for _, r in df_prioridade.iterrows():
-    preco_v = float(r['V_Cru'])
-    valor_cada = v_aporte / len(df_prioridade) if len(df_prioridade) > 0 else 0
-    cotas = int(valor_cada // preco_v) if preco_v > 0 else 0
-    capital_investido += cotas * preco_v
-
-capital_nao_alocado = v_aporte - capital_investido
-
-# Yield mensal efetivo sobre o aporte
-yield_mensal_efetivo = (total_renda_mensal / v_aporte * 100) if v_aporte > 0 else 0
-
-st.markdown("---")
-st.subheader("📊 Diagnóstico do Aporte (Estratégia Huli)")
-
-c3, c4, c5 = st.columns(3)
-
-with c3:
-    st.metric(
-        "Capital Investido",
-        f"R$ {capital_investido:,.2f}"
-    )
-
-with c4:
-    st.metric(
-        "Capital Não Alocado",
-        f"R$ {capital_nao_alocado:,.2f}",
-        help="Valor que não foi investido por falta de cotas inteiras."
-    )
-
-with c5:
-    st.metric(
-        "Yield Mensal Efetivo",
-        f"{yield_mensal_efetivo:.2f}%",
-        help="Renda mensal estimada dividida pelo valor total do aporte."
-    )
-
- # --- RESUMO DA RENDA PASSIVA ---
+     # --- RESUMO DA RENDA PASSIVA ---
     st.markdown("---")
     c1, c2 = st.columns(2)
 
@@ -636,5 +636,6 @@ with tab_historico:
         c1.metric("💰 Valor Total Investido", f"R$ {total_investido:,.2f}")
         c2.metric("📈 Dividendos Mensais", f"R$ {renda_mensal:.2f}")
         c3.metric("📊 Retorno Mensal (%)", f"{percentual:.2f}%")
+
 
 
