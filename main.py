@@ -5,6 +5,16 @@ import numpy as np
 import json
 import os
 
+# ==================== HISTÓRICO DE APORTES ====================
+
+HIST_DIV = "historico_dividendos.json"
+
+def carregar_historico():
+    if os.path.exists(HIST_DIV):
+        with open(HIST_DIV, "r") as f:
+            return json.load(f)
+    return []
+
 # Funções para Persistência de Dados
 def salvar_dados_usuario(dados):
     with open("carteira_salva.json", "w") as f:
@@ -722,3 +732,4 @@ with tab_renda:
                     f"R$ {(custo_vida - renda_atual):,.2f} "
                     "por mês para atingir a independência financeira."
                 )
+
