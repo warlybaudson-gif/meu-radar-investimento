@@ -42,7 +42,7 @@ st.markdown("""
 st.title("💰 IA Rockefeller")
 
 # CRIAÇÃO DAS ABAS
-tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_manual, tab_historico = st.tabs([
+tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_manual, tab_historico, tab_renda_mensal = st.tabs([
     "📊 Painel de Controle", 
     "🔍 Radar Carteira Modelo",
     "🎯 Estratégia Huli", 
@@ -50,7 +50,8 @@ tab_painel, tab_radar_modelo, tab_huli, tab_modelo, tab_dna, tab_backtest, tab_m
     "🧬 DNA Financeiro",
     "📈 Backtesting",
     "📖 Manual de Instruções",
-    "📜 Histórico de Aportes"
+    "📜 Histórico de Aportes",
+    "📆 Renda Mensal & Dividendos"
 ])
 
 # --- PROCESSAMENTO DE DADOS (DICIONÁRIOS COM ATIVOS ABAIXO DE R$ 10) ---
@@ -628,3 +629,96 @@ with tab_historico:
         c2.metric("📈 Dividendos Mensais", f"R$ {renda_mensal:.2f}")
         c3.metric("📊 Retorno Mensal (%)", f"{percentual:.2f}%")
 
+# ==================== ABA RENDA MENSAL & HISTÓRICO ====================
+with tab_renda:
+    st.header("📆 Renda Mensal & Histórico de Dividendos")
+
+    historico = carregar_historico()
+
+    if not historico:
+        st.info("📭 Nenhum aporte registrado ainda.")
+    else:
+        df_hist = pd.DataFrame(historico)
+
+        # Garantia de tipos
+        df_hist["data"] = pd.to_datetime(df_hist["data"])
+        df_hist["renda_mensal"] = df_hist["renda_mensal"].astype(float)
+
+        # Agrupamento por mês
+        df_hist["Mes"] = df_hist["data"].dt.to_period("M").astype(str)
+
+        renda_mensal = (
+            df_hist
+            .groupby("Mes", as_index=False)["renda_mensal"]
+            .sum()
+        )
+
+        # ==================== GRÁFICO DE CRESCIMENTO ====================
+        st.subheader("📈 Evolução da Renda Mensal")
+        st.line_chart(
+            renda_mensal.set_index("Mes")
+        )
+
+        # ==================== TABELA DE APORTES ====================
+        st.subheader("📋 Histórico de Aportes")
+        st.dataframe(
+            df_hist[[
+                "data",
+                "ativo",
+                "cotas",
+                "valor_investido",
+                "renda_mensal"
+            ]].rename(columns={
+                "data": "Data",
+                "ativo": "Ativo",
+                "cotas": "Cotas",
+                "valor_investido": "Valor Investido (R$)",
+                "renda_mensal": "Renda Mensal (R$)"
+            }),
+            use_container_width=True
+        )
+
+        # ==================== ALERTA DE INDEPENDÊNCIA ====================
+        st.markdown("---")
+        st.subheader("🔔 Diagnóstico de Independência Financeira")
+
+        custo_vida = st.number_input(
+            "💸 Seu custo de vida mensal (R$)",
+            min_value=0.0,
+            step=500.0
+        )
+
+        renda_atual = renda_mensal["renda_mensal"].iloc[-1]
+
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            st.metric(
+                "Renda Mensal Atual",
+                f"R$ {renda_atual:,.2f}"
+            )
+
+        with c2:
+            st.metric(
+                "Custo de Vida",
+                f"R$ {custo_vida:,.2f}"
+            )
+
+        with c3:
+            percentual = (renda_atual / custo_vida * 100) if custo_vida > 0 else 0
+            st.metric(
+                "Cobertura do Custo",
+                f"{percentual:.1f}%"
+            )
+
+        if custo_vida > 0:
+            if renda_atual >= custo_vida:
+                st.success(
+                    "🎉 Parabéns! Sua renda passiva já cobre seu custo de vida."
+                )
+            else:
+                st.warning(
+                    f"⚠️ Faltam aproximadamente "
+                    f"R$ {(custo_vida - renda_atual):,.2f} "
+                    "por mês para atingir a independência financeira."
+                )
