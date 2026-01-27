@@ -640,7 +640,7 @@ with tab_historico:
         c3.metric("📊 Retorno Mensal (%)", f"{percentual:.2f}%")
 
 # ==================== ABA RENDA MENSAL & HISTÓRICO ====================
-with tab_renda:
+with tab_renda_mensal:
     st.header("📆 Renda Mensal & Histórico de Dividendos")
 
     historico = carregar_historico()
@@ -732,4 +732,5 @@ with tab_renda:
                     f"R$ {(custo_vida - renda_atual):,.2f} "
                     "por mês para atingir a independência financeira."
                 )
+
 
