@@ -733,4 +733,58 @@ with tab_renda_mensal:
                     "por mês para atingir a independência financeira."
                 )
 
+# ===== BASE DE ATIVOS (manual e estratégica) =====
+    dados_renda = [
+        {"Ativo": "HGLG11", "Tipo": "FII Logística", "Frequência": "Mensal", "DY_Mensal": 0.007},
+        {"Ativo": "XPLG11", "Tipo": "FII Logística", "Frequência": "Mensal", "DY_Mensal": 0.007},
+        {"Ativo": "XPML11", "Tipo": "FII Shopping", "Frequência": "Mensal", "DY_Mensal": 0.008},
+        {"Ativo": "VISC11", "Tipo": "FII Shopping", "Frequência": "Mensal", "DY_Mensal": 0.008},
+        {"Ativo": "KNCR11", "Tipo": "FII Recebíveis", "Frequência": "Mensal", "DY_Mensal": 0.006},
+        {"Ativo": "CPTS11", "Tipo": "FII Recebíveis", "Frequência": "Mensal", "DY_Mensal": 0.007},
+
+        {"Ativo": "DIVD11", "Tipo": "ETF Dividendos", "Frequência": "Mensal", "DY_Mensal": 0.006},
+        {"Ativo": "BIVB39", "Tipo": "ETF Exterior", "Frequência": "Mensal", "DY_Mensal": 0.005},
+
+        {"Ativo": "TAEE11", "Tipo": "Ação Energia", "Frequência": "Trimestral", "DY_Mensal": 0.009},
+        {"Ativo": "BBAS3", "Tipo": "Ação Bancária", "Frequência": "Trimestral", "DY_Mensal": 0.008},
+        {"Ativo": "PETR4", "Tipo": "Ação Commodities", "Frequência": "Trimestral", "DY_Mensal": 0.010},
+    ]
+
+    df_renda = pd.DataFrame(dados_renda)
+
+    st.subheader("📋 Ativos com Tendência de Renda Mensal")
+    st.dataframe(df_renda, use_container_width=True)
+
+    st.markdown("---")
+
+    # ===== SIMULADOR =====
+    st.subheader("🧮 Simulador de Renda Mensal")
+
+    aporte_mensal = st.number_input(
+        "💵 Aporte mensal (R$)",
+        min_value=100,
+        value=1000,
+        step=100
+    )
+
+    reinvestir = st.checkbox("🔁 Reinvestir dividendos", value=True)
+
+    dy_medio = df_renda["DY_Mensal"].mean()
+
+    renda_mensal_estimada = aporte_mensal * dy_medio
+
+    st.metric(
+        "💰 Renda Mensal Estimada",
+        f"R$ {renda_mensal_estimada:,.2f}",
+        help="Baseado no DY médio mensal da carteira"
+    )
+
+    if reinvestir:
+        st.success(
+            "🔁 Reinvestindo os dividendos, sua renda cresce de forma **exponencial** ao longo do tempo."
+        )
+    else:
+        st.info(
+            "💸 Usando os dividendos como renda, você mantém o capital estável."
+        )
 
