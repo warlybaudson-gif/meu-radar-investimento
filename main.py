@@ -788,3 +788,94 @@ with tab_renda_mensal:
             "💸 Usando os dividendos como renda, você mantém o capital estável."
         )
 
+# === ABA: SINAL DE MERCADO (TÉCNICO + FUNDAMENTAL) ===
+with tab_renda_mensal:  # ou outra aba que você criar para sinais
+    st.header("📈 Sinais Integrados de Mercado (Técnico + Fundamental)")
+    st.markdown("Esta aba combina análise técnica e fundamental para sugerir potenciais pontos de **compra, observação ou venda**.")
+
+    ativos_sinal = [
+        "HGLG11.SA", "VISC11.SA", "XPML11.SA", "KNCR11.SA",
+        "CPTS11.SA", "DIVD11.SA", "BIVB39.SA", "TAEE11.SA",
+        "PETR4.SA", "ITUB4.SA", "BBAS3.SA", "AAPL",
+        "MSFT", "SCHD", "VIG", "QDIV11.SA"
+    ]
+
+    sinais = []
+
+    def calcular_indicadores(df):
+        # Médias móveis
+        df["MA50"] = df["Close"].rolling(50).mean()
+        df["MA200"] = df["Close"].rolling(200).mean()
+        # RSI simplificado
+        delta = df["Close"].diff()
+        ganho = delta.clip(lower=0).rolling(14).mean()
+        perda = (-delta.clip(upper=0)).rolling(14).mean()
+        rs = ganho / (perda.replace(0, np.nan))
+        df["RSI"] = 100 - (100 / (1 + rs))
+        return df
+
+    def sinal_tecnico(latest, df):
+        # Tendência de alta se MA50 > MA200
+        trend = "alta" if df["MA50"].iloc[-1] > df["MA200"].iloc[-1] else "baixa"
+        rsi = df["RSI"].iloc[-1]
+        if trend == "alta" and rsi < 70:
+            return "técnico_alta"
+        elif trend == "baixa" and rsi > 50:
+            return "técnico_baixa"
+        else:
+            return "técnico_lateral"
+
+    def status_fundamental(p_atual, valor_justo):
+        if p_atual < valor_justo:
+            return "fund_desc"
+        elif p_atual > (valor_justo * 1.2):
+            return "fund_sobre"
+        else:
+            return "fund_justo"
+
+    for ticker in ativos_sinal:
+        try:
+            ativo = yf.Ticker(ticker)
+            hist = ativo.history(period="12mo")
+            if hist.empty:
+                continue
+
+            info = ativo.info
+            p_atual = hist["Close"].iloc[-1]
+
+            # Técnicos
+            df_ind = calcular_indicadores(hist.copy())
+            sinal_tec = sinal_tecnico(p_atual, df_ind)
+
+            # Fundamentais
+            lpa = info.get("trailingEps", 0) or 0
+            vpa = info.get("bookValue", 0) or 0
+            valor_justo = np.sqrt(22.5 * lpa * vpa) if lpa > 0 and vpa > 0 else p_atual
+            fund_status = status_fundamental(p_atual, valor_justo)
+
+            final = "⚠️ Neutro"
+            if sinal_tec == "técnico_alta" and fund_status == "fund_desc":
+                final = "✅ Forte Compra"
+            elif sinal_tec == "técnico_alta" and fund_status == "fund_justo":
+                final = "🔶 Compra Fraca"
+            elif sinal_tec == "técnico_lateral" and fund_status == "fund_desc":
+                final = "🔎 Observar"
+            elif sinal_tec == "técnico_baixa" or fund_status == "fund_sobre":
+                final = "❌ Evitar/Vender"
+
+            sinais.append({
+                "Ativo": ticker,
+                "Preço Atual": f"{p_atual:.2f}",
+                "Tendência Técnica": sinal_tec,
+                "Fundamental": fund_status,
+                "Sinal Final": final
+            })
+        except Exception:
+            continue
+
+    df_sinais = pd.DataFrame(sinais)
+
+    if df_sinais.empty:
+        st.warning("Nenhum ativo com dados suficientes para análise.")
+    else:
+        st.dataframe(df_sinais, use_container_width=True)
